@@ -2,14 +2,14 @@ Excellent! I now have all the information needed to create comprehensive SPARC d
 
 ---
 
-# SPARC Documentation: Local RAG Application with Ollama
+# SPARC Documentation: Web-Based RAG Application with Ollama
 
 ## **S - SPECIFICATION**
 
 ### **Project Overview**
 
 #### **Project Goal**
-Develop a local, privacy-focused Retrieval-Augmented Generation (RAG) application that enables users to perform intelligent question-answering against a large knowledge base of documents (7,500+) without requiring external API calls . The system will use Ollama for local LLM inference and provide transparent source attribution through a web-based chat interface.
+Develop a web-based, privacy-focused Retrieval-Augmented Generation (RAG) application that enables users to perform intelligent question-answering against a large knowledge base of documents (7,500+) through a REST API. The system will use Ollama for LLM inference (either locally or remotely hosted) and provide transparent source attribution through a web-based chat interface accessible over the internet.
 
 #### **Context and Background**
 RAG is a technique that enhances large language model accuracy by retrieving relevant information from external knowledge sources before generating responses . By combining retrieval-based and generation-based methods, RAG systems first retrieve relevant documents from a knowledge base and then use that information to generate contextually accurate answers .
@@ -19,7 +19,7 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 **Primary Users:**
 - Knowledge workers requiring quick access to organizational documentation
 - Researchers needing to query large document collections
-- Teams requiring private, on-premises document Q&A capabilities
+- Teams requiring private, cloud-hosted or web-accessible document Q&A capabilities
 
 **User Personas:**
 
@@ -30,7 +30,7 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 
 2. **Mike - Compliance Officer**
    - Requires verifiable answers with clear source attribution
-   - Handles sensitive documents requiring local processing
+   - Handles sensitive documents requiring secure server-side processing
    - Technical comfort: Low-Medium
 
 3. **Dev Team - Internal Users**
@@ -105,8 +105,8 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 - **Importance**: Ensures system remains functional as document collection grows
 
 #### **NFR3: Privacy and Security**
-- **NFR3.1**: All processing occurs locally (no external API calls)
-- **NFR3.2**: Document data never leaves local server
+- **NFR3.1**: All processing occurs on the server (supporting both local and remote Ollama instances)
+- **NFR3.2**: Document data remains secure on the application server
 - **NFR3.3**: Secure file upload validation (file type, size limits)
 - **NFR3.4**: Access control for document upload/deletion operations
 - **Importance**: Essential for handling sensitive organizational data
@@ -366,7 +366,7 @@ rag-ollama-app/
 
 1. **Ollama Service**
    - Role: Provides LLM inference and embedding generation
-   - Interface: HTTP API (localhost:11434)
+   - Interface: HTTP API (configurable via ${OLLAMA_BASE_URL} environment variable)
 
 2. **Vector Database**
    - Role: Stores and retrieves document embeddings
@@ -414,7 +414,7 @@ rag-ollama-app/
 #### **Technical Constraints**
 - **TC1**: Must use Ollama (no external API calls)
 - **TC2**: All processing must occur on local server
-- **TC3**: Vector database must support local deployment
+- **TC3**: Vector database must support web-based deployment
 - **TC4**: Limited to document types with text extraction capabilities
 
 #### **Performance Constraints**
@@ -568,7 +568,7 @@ FUNCTION generate_embedding(text):
     
     // Step 2: Call Ollama API
     TRY:
-        response = http_post("http://localhost:11434/api/embeddings", request)
+        response = http_post("${OLLAMA_BASE_URL}/api/embeddings", request)
         embedding = response.embedding
     CATCH OllamaConnectionError:
         LOG_ERROR("Ollama service unavailable")
@@ -684,7 +684,7 @@ FUNCTION generate_llm_response(prompt):
     // Step 2: Stream response
     response_text = ""
     TRY:
-        stream = http_post_stream("http://localhost:11434/api/generate", request)
+        stream = http_post_stream("${OLLAMA_BASE_URL}/api/generate", request)
         
         FOR EACH chunk IN stream:
             token = chunk.response
@@ -1120,7 +1120,7 @@ The RAG application follows a **layered architecture** with clear separation of 
 - **Vector DB Interface**: Abstract interface for vector operations
 - **Retriever**: Implements similarity search and ranking
 - Handles connection pooling and caching
-- Technologies: ChromaDB (recommended for local deployment)
+- Technologies: ChromaDB (supports both local and cloud deployment)
 
 **Embedding Generator Module (`embeddings/`)**
 - **Ollama Client**: Communicates with Ollama API
@@ -1142,7 +1142,7 @@ The RAG application follows a **layered architecture** with clear separation of 
 - Persistent vector database
 - Stores document embeddings and metadata
 - Provides similarity search capabilities
-- Local deployment, no external dependencies
+- Flexible deployment options (local, cloud, containerized)
 
 **Ollama Service**
 - Runs locally on port 11434
@@ -1380,16 +1380,78 @@ CREATE TABLE messages (
 - Role-based access control (admin vs. user)
 
 **Data Protection:**
-- All data stored locally
-- No external API calls
+- All data stored securely on the server
+- Configurable external service endpoints (Ollama can be local or remote)
 - Secure file upload handling
 - Input sanitization
+
+**API Security for Web Deployment:**
+- JWT-based authentication
+- API key authentication for service-to-service calls
+- CORS configuration for cross-origin requests
+- Rate limiting per IP address
+- HTTPS/TLS encryption in production
 
 **Error Handling:**
 - Graceful degradation
 - User-friendly error messages
 - Detailed logging for debugging
 - No sensitive information in error responses
+
+---
+
+### **Environment Configuration**
+
+**Required Environment Variables:**
+
+```bash
+# API Configuration
+API_BASE_URL=https://api.example.com          # Base URL for API endpoints
+API_HOST=api.example.com                       # API hostname for CORS
+
+# Ollama Configuration
+OLLAMA_BASE_URL=https://ollama.example.com     # Remote Ollama instance
+# Or: http://localhost:11434 for local development
+
+# CORS Configuration (for web clients)
+CORS_ORIGINS=https://app.example.com,https://www.example.com
+CORS_ALLOW_CREDENTIALS=true
+
+# Security
+JWT_SECRET=your-jwt-secret-key-min-32-chars
+API_KEY=your-api-key-for-service-auth
+ENABLE_RATE_LIMITING=true
+ENABLE_HTTPS=true
+
+# Application
+SECRET_KEY=your-secret-key-min-32-chars
+ENVIRONMENT=production
+DEBUG=False
+```
+
+**CORS Configuration Requirements:**
+
+```python
+# Flask CORS middleware configuration
+from flask_cors import CORS
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": os.getenv("CORS_ORIGINS", "*").split(","),
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
+```
+
+**Cloud Deployment Options:**
+
+1. **AWS**: EC2, ECS, Lambda with API Gateway
+2. **Azure**: App Service, Container Instances, AKS
+3. **GCP**: Cloud Run, Compute Engine, GKE
+4. **Docker**: Containerized deployment with docker-compose
+5. **Kubernetes**: Scalable orchestration for high availability
 
 ---
 
@@ -1585,7 +1647,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     
     # Ollama
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_BASE_URL: str = "${OLLAMA_BASE_URL}"  # Environment variable for Ollama API endpoint
     OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
     OLLAMA_LLM_MODEL: str = "llama2"
     
@@ -1898,7 +1960,7 @@ APP_NAME=RAG Ollama App
 DEBUG=False
 SECRET_KEY=your-secret-key-here
 
-OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_BASE_URL=https://ollama.example.com  # Or http://localhost:11434 for local development
 OLLAMA_EMBEDDING_MODEL=nomic-embed-text
 OLLAMA_LLM_MODEL=llama2
 
@@ -1922,7 +1984,7 @@ source venv/bin/activate
 # Run Flask development server
 python src/app.py
 
-# Application will be available at http://localhost:5000
+# Application will be available at ${API_BASE_URL} (configure in environment variables)
 ```
 
 **Production Mode with Gunicorn:**
@@ -2031,7 +2093,7 @@ sudo systemctl status rag-app
 # Post-Deployment Testing (continued)
 
 # 1. Health Check
-curl http://localhost:5000/api/health
+curl ${API_BASE_URL}/api/health  # Or https://api.example.com/api/health for production
 
 # Expected response:
 # {
@@ -2045,17 +2107,17 @@ curl http://localhost:5000/api/health
 # }
 
 # 2. Test Document Upload
-curl -X POST http://localhost:5000/api/upload \
+curl -X POST ${API_BASE_URL}/api/upload \
   -F "documents=@test_document.pdf"
 
 # 3. Test Query
-curl -X POST http://localhost:5000/api/chat \
+curl -X POST ${API_BASE_URL}/api/chat \
   -H "Content-Type: application/json" \
   -d '{"query": "What is the main topic of the uploaded document?"}'
 
 # 4. Load Testing (using Apache Bench)
 ab -n 100 -c 10 -p query.json -T application/json \
-  http://localhost:5000/api/chat
+  ${API_BASE_URL}/api/chat
 ```
 
 #### **Smoke Tests**
@@ -2065,7 +2127,7 @@ ab -n 100 -c 10 -p query.json -T application/json \
 import requests
 import time
 
-def run_smoke_tests(base_url="http://localhost:5000"):
+def run_smoke_tests(base_url=os.getenv("API_BASE_URL", "http://localhost:5000")):
     results = []
     
     # Test 1: Health endpoint
@@ -2424,7 +2486,7 @@ journalctl -u ollama -f
 ollama list
 
 # Test Ollama directly
-curl http://localhost:11434/api/generate -d '{
+curl ${OLLAMA_BASE_URL}/api/generate -d '{
   "model": "llama2",
   "prompt": "Hello"
 }'
@@ -2635,7 +2697,7 @@ tail -f logs/app.log
 sudo systemctl status rag-app
 
 # View metrics
-curl http://localhost:5000/metrics
+curl ${API_BASE_URL}/metrics
 
 # Check resource usage
 htop
@@ -2812,10 +2874,10 @@ Response:
 
 ### **Conclusion**
 
-This SPARC documentation provides a comprehensive blueprint for building a production-ready RAG application using Ollama. The system is designed to handle large document collections (7,500+) while maintaining privacy through local processing.
+This SPARC documentation provides a comprehensive blueprint for building a production-ready RAG application using Ollama. The system is designed to handle large document collections (7,500+) while maintaining privacy through secure server-side processing with flexible deployment options including cloud platforms (AWS, Azure, GCP), Docker containers, and Kubernetes orchestration.
 
 **Key Strengths:**
-- **Privacy-First**: All processing occurs locally
+- **Privacy-First**: All processing occurs on the server with configurable security controls
 - **Scalable**: Handles large document collections efficiently
 - **Transparent**: Clear source attribution for all answers
 - **Maintainable**: Modular architecture with comprehensive documentation

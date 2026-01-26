@@ -1034,7 +1034,7 @@ SIMILARITY_THRESHOLD = 0.7       # Relevance threshold
 - <5 second response time (95th percentile)
 - >10 documents/minute ingestion rate
 
-For detailed optimization techniques, see [Performance Guide](SPARC_Documents/Refinement.md#performance-optimizations).
+For detailed optimization techniques, see [Performance Guide](SPARC_Documents/Refinement.md).
 
 ---
 

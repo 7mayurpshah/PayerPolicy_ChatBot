@@ -142,36 +142,118 @@ Based on 1-2 developers working full-time:
 
 Your implementation will be considered complete when:
 
+### Performance Targets
+- ✅ Query response time <5 seconds (95th percentile)
+- ✅ Vector search latency <500ms
+- ✅ Document ingestion rate >10 documents/minute
+- ✅ Query cache hit rate >60% (target: 73%)
+- ✅ Supports 10-20+ concurrent users
+
+### Capacity & Scalability
+- ✅ Successfully handles 7,500+ documents
+- ✅ Efficient HNSW vector indexing for fast similarity search
+- ✅ Adaptive top-k selection (3-7 results based on query complexity)
+- ✅ Parallel embedding generation with batch processing
+
+### Quality & Reliability
 - ✅ All 125 tasks in the implementation plan are marked complete
 - ✅ Test coverage >80% with all tests passing
-- ✅ Query response time <5 seconds (95th percentile)
-- ✅ Document ingestion rate >10 documents/minute
-- ✅ Successfully handles 7,500+ documents
-- ✅ Supports 10+ concurrent users
 - ✅ Security audit passes (no critical vulnerabilities)
-- ✅ Production deployment successful with monitoring
+- ✅ Comprehensive error handling with fallback mechanisms
+- ✅ Audit logging for all operations
+
+### Deployment
+- ✅ Production deployment successful with systemd/Nginx
+- ✅ Health monitoring endpoints active
+- ✅ JWT authentication with role-based access control
+- ✅ Rate limiting enforced (100 requests/hour per user)
 
 ## 🛠️ Technology Stack Summary
 
 ### Backend
 - **Python 3.10+** - Core language
 - **Flask 3.0+** - Web framework
-- **ChromaDB 0.4.22** - Vector database
-- **Ollama** - LLM inference (nomic-embed-text, llama2)
-- **PyPDF2/pdfplumber** - PDF processing
-- **openpyxl** - Excel processing
-- **PyJWT + bcrypt** - Authentication
+- **ChromaDB 0.4.22** - Vector database (HNSW indexing)
+- **Ollama** - LLM inference (nomic-embed-text for embeddings, llama2/mistral for generation)
+- **PyPDF2/pdfplumber** - PDF processing with metadata extraction
+- **openpyxl** - Excel processing with sheet name tracking
+- **PyJWT + bcrypt** - JWT authentication with role-based access control
 
 ### Frontend
 - **HTML5/CSS3** - Structure and styling
 - **JavaScript (ES6+)** - Interactivity
-- **Server-Sent Events** - Response streaming
+- **Server-Sent Events** - Response streaming for real-time updates
 
 ### Deployment
-- **Gunicorn** - WSGI server
-- **Nginx** - Reverse proxy
-- **systemd** - Service management
-- **Docker** - Containerization (optional)
+- **Gunicorn** - WSGI server (production)
+- **Nginx** - Reverse proxy with SSL/TLS and security headers
+- **systemd** - Service management with automatic restart
+- **Docker** - Containerization (optional, Cloud Run support)
+
+## ⚙️ Configuration Parameters
+
+Understanding the configuration options will help you optimize the application for your use case:
+
+### Core Configuration
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| **Ollama Settings** | | |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint (local or remote) |
+| `OLLAMA_EMBEDDING_MODEL` | `nomic-embed-text` | Embedding model (768 dimensions) |
+| `OLLAMA_LLM_MODEL` | `llama2` | Language model for text generation |
+| `OLLAMA_TIMEOUT` | `60` | Request timeout in seconds |
+| **Document Processing** | | |
+| `CHUNK_SIZE` | `500` | Document chunk size in tokens |
+| `CHUNK_OVERLAP` | `50` | Overlapping tokens between chunks |
+| `MAX_FILE_SIZE_MB` | `100` | Maximum upload file size |
+| `BATCH_SIZE` | `32` | Batch size for parallel processing |
+| **RAG Retrieval** | | |
+| `TOP_K_RESULTS` | `5` | Number of chunks to retrieve (adaptive 3-7) |
+| `SIMILARITY_THRESHOLD` | `0.7` | Minimum similarity score for relevance |
+| `MAX_CONTEXT_LENGTH` | `4000` | Maximum tokens in LLM context |
+| **Caching & Performance** | | |
+| `USE_QUERY_CACHE` | `True` | Enable query result caching |
+| `CACHE_TTL_SECONDS` | `3600` | Cache time-to-live (1 hour) |
+| `QUERY_CACHE_SIZE` | `1000` | Number of cached queries |
+| `EMBEDDING_CACHE_SIZE` | `10000` | Number of cached embeddings |
+| **Security & Limits** | | |
+| `TOKEN_EXPIRY_SECONDS` | `3600` | JWT token expiration (1 hour) |
+| `MAX_REQUESTS_PER_HOUR` | `100` | Rate limit per user |
+| `MAX_CONCURRENT_REQUESTS` | `10` | Maximum parallel requests |
+
+### Testing Your Configuration
+
+After setup, verify your configuration:
+
+```bash
+# Test health endpoint
+curl http://localhost:5000/api/health | jq
+
+# Expected response:
+{
+  "status": "healthy",
+  "checks": {
+    "ollama": true,
+    "vector_db": true,
+    "disk_space": true,
+    "memory": true
+  },
+  "models": {
+    "embedding": "nomic-embed-text",
+    "llm": "llama2"
+  }
+}
+
+# Test Ollama connectivity
+curl http://localhost:11434/api/tags
+
+# Test embedding generation
+curl http://localhost:11434/api/embeddings -d '{
+  "model": "nomic-embed-text",
+  "prompt": "test query"
+}'
+```
 
 ## 📞 Support & Resources
 
@@ -179,6 +261,7 @@ Your implementation will be considered complete when:
 - **Architecture Questions:** Check SPARC_Documents/ for design rationale
 - **Task Tracking:** Use plan/feature-rag-application-1.md as your checklist
 - **Troubleshooting:** See README.md troubleshooting section
+- **Configuration Help:** See Configuration Parameters table above
 
 ## 🔄 Keeping Track of Progress
 

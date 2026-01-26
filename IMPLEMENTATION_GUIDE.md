@@ -10,18 +10,177 @@ This guide provides a comprehensive, step-by-step roadmap for implementing the P
 
 ## Table of Contents
 
-1. [Prerequisites & Setup](#1-prerequisites--setup)
-2. [Phase 1: Project Foundation](#2-phase-1-project-foundation-week-1)
-3. [Phase 2: Document Processing](#3-phase-2-document-processing-week-1-2)
-4. [Phase 3: Vector Database & Embeddings](#4-phase-3-vector-database--embeddings-week-2)
-5. [Phase 4: RAG Pipeline](#5-phase-4-rag-pipeline-week-3)
-6. [Phase 5: API Layer](#6-phase-5-api-layer-week-3-4)
-7. [Phase 6: Frontend](#7-phase-6-frontend-week-4)
-8. [Phase 7: Authentication & Security](#8-phase-7-authentication--security-week-5)
-9. [Phase 8: Testing & Quality Assurance](#9-phase-8-testing--quality-assurance-week-5-6)
-10. [Phase 9: Deployment & Production](#10-phase-9-deployment--production-week-6)
-11. [Verification & Troubleshooting](#11-verification--troubleshooting)
-12. [Next Steps & Enhancements](#12-next-steps--enhancements)
+1. [System Architecture Overview](#system-architecture-overview)
+2. [Prerequisites & Setup](#1-prerequisites--setup)
+3. [Phase 1: Project Foundation](#2-phase-1-project-foundation-week-1)
+4. [Phase 2: Document Processing](#3-phase-2-document-processing-week-1-2)
+5. [Phase 3: Vector Database & Embeddings](#4-phase-3-vector-database--embeddings-week-2)
+6. [Phase 4: RAG Pipeline](#5-phase-4-rag-pipeline-week-3)
+7. [Caching Implementation](#6-caching-implementation-critical-for-performance)
+8. [Citation Management System](#7-citation-management-system)
+9. [Semantic Chunking Enhancement](#8-semantic-chunking-enhancement)
+10. [Phase 8: Testing & Quality Assurance](#9-phase-8-testing--quality-assurance-week-5-6)
+11. [Phase 9: Deployment & Production](#10-phase-9-deployment--production-week-6)
+12. [Verification & Troubleshooting](#11-verification--troubleshooting)
+13. [Next Steps & Enhancements](#12-next-steps--enhancements)
+
+---
+
+## System Architecture Overview
+
+Before diving into implementation, it's crucial to understand the **5-layer architecture** that guides this application's design:
+
+### Layer Structure
+
+```
+┌─────────────────────────────────────────────────────────┐
+│         LAYER 1: PRESENTATION LAYER                      │
+│  • Web UI (HTML/CSS/JS) with chat interface              │
+│  • Real-time streaming via Server-Sent Events            │
+│  • Interactive source document panel                     │
+│  • Responsive design for multiple devices                │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────┼────────────────────────────────────┐
+│         LAYER 2: API LAYER (Flask Routes)                │
+│  • RESTful endpoints (/api/chat, /api/documents, etc.)   │
+│  • JWT authentication & authorization middleware         │
+│  • Request validation & sanitization                     │
+│  • Rate limiting (100 req/hour per user)                 │
+│  • Error handling & structured responses                 │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────┼────────────────────────────────────┐
+│         LAYER 3: BUSINESS LOGIC LAYER                    │
+│  • RAG Pipeline Orchestrator (cache-first)               │
+│  • Document Processor (semantic chunking)                │
+│  • LLM Response Generator (with fallback)                │
+│  • Citation Manager (intelligent matching)               │
+│  • Context Builder (token budget management)             │
+│  • Parallel Processing Engine                            │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────┼────────────────────────────────────┐
+│         LAYER 4: DATA ACCESS LAYER                       │
+│  • Vector Store Interface (ChromaDB with HNSW)           │
+│  • Three-tier Cache Manager (query, embedding, metadata) │
+│  • Metadata Database (SQLite)                            │
+│  • File Storage Operations                               │
+└────────────────────┬────────────────────────────────────┘
+                     │
+┌────────────────────┼────────────────────────────────────┐
+│         LAYER 5: EXTERNAL SERVICES LAYER                 │
+│  • Ollama API (nomic-embed-text + llama2/mistral)        │
+│  • ChromaDB Vector Database                              │
+│  • File System                                           │
+│  • Retry logic & exponential backoff                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Data Models
+
+Understanding these data structures is essential for implementation:
+
+#### 1. Document Model
+```python
+class Document:
+    """Represents an uploaded document"""
+    document_id: str          # UUID
+    filename: str             # Original filename
+    file_type: str            # 'pdf' or 'excel'
+    file_size: int            # Bytes
+    upload_date: datetime
+    num_chunks: int           # Number of chunks created
+    status: str               # 'pending', 'processing', 'indexed', 'failed'
+    metadata: dict            # {page_count, author, created_date, etc.}
+```
+
+#### 2. DocumentChunk Model
+```python
+class DocumentChunk:
+    """Represents a semantic chunk of a document"""
+    chunk_id: str             # UUID
+    document_id: str          # Foreign key to Document
+    chunk_index: int          # Position in document
+    text: str                 # Chunk content (500 tokens)
+    embedding: List[float]    # 768-dim vector from nomic-embed-text
+    metadata: dict            # {page_number, sheet_name, start_char, end_char}
+```
+
+#### 3. Conversation Model
+```python
+class Conversation:
+    """Represents a multi-turn conversation"""
+    conversation_id: str      # UUID
+    user_id: str              # User identifier
+    created_at: datetime
+    updated_at: datetime
+    messages: List[Message]   # Conversation history
+```
+
+#### 4. Message Model
+```python
+class Message:
+    """Represents a single message in a conversation"""
+    message_id: str           # UUID
+    conversation_id: str      # Foreign key
+    role: str                 # 'user' or 'assistant'
+    content: str              # Message text
+    sources: List[dict]       # Source citations (for assistant messages)
+    timestamp: datetime
+    metadata: dict            # {query_time, num_sources, cache_hit, model}
+```
+
+### Query Processing Flow
+
+Understanding the query flow helps implement each component correctly:
+
+```
+1. User Query Received
+   ↓
+2. Input Validation (3-1000 chars, malicious pattern check)
+   ↓
+3. Check Query Cache (73% hit rate → return cached result)
+   ↓ [Cache Miss]
+4. Generate Query Embedding
+   ├─ Check Embedding Cache (24-hour TTL)
+   └─ If miss: Call Ollama API with retry logic
+   ↓
+5. Vector Similarity Search (<500ms)
+   ├─ ChromaDB HNSW search
+   └─ Adaptive Top-K (3-7 based on query length)
+   ↓
+6. Optional Re-ranking (if >3 results)
+   └─ Cross-encoder scoring
+   ↓
+7. Build Context (Token Budget Management)
+   ├─ Select top chunks within 4000-token limit
+   └─ Add conversation history if space permits
+   ↓
+8. LLM Generation
+   ├─ Call Ollama with context + prompt template
+   └─ Fallback to "no answer" if LLM fails
+   ↓
+9. Add Citations (Intelligent Sentence Matching)
+   └─ Map [1], [2] markers to source chunks
+   ↓
+10. Cache Result (1-hour TTL)
+    ↓
+11. Stream Response to User
+```
+
+### Key Implementation Principles
+
+As you implement each phase, keep these principles in mind:
+
+1. **Cache-First Strategy**: Always check caches before expensive operations
+2. **Semantic Chunking**: Respect paragraph/section boundaries, not arbitrary splits
+3. **Token Budget Management**: Ensure context fits within LLM limits (4000 tokens)
+4. **Parallel Processing**: Batch embeddings, process documents concurrently
+5. **Error Handling**: Comprehensive try-catch with fallbacks and logging
+6. **Retry Logic**: Exponential backoff for Ollama API calls (3 retries)
+7. **Input Validation**: Sanitize all user input before processing
+8. **Audit Logging**: Non-blocking logs for all operations
 
 ---
 
@@ -1262,6 +1421,586 @@ python test_rag_pipeline.py
 ## 8. Phase 7: Authentication & Security (Week 5)
 
 [Content for JWT auth, user management, security measures...]
+
+## 6. Caching Implementation (Critical for Performance)
+
+### 6.1 Three-Tier Cache Architecture
+
+Create `src/cache/cache_manager.py`:
+
+```python
+import logging
+import hashlib
+import time
+from typing import Optional, Dict, Any, List
+from functools import lru_cache
+from collections import OrderedDict
+import threading
+
+logger = logging.getLogger(__name__)
+
+class CacheManager:
+    """
+    Three-tier caching system:
+    1. Query Cache - Complete RAG results (1-hour TTL)
+    2. Embedding Cache - Vector embeddings (24-hour TTL)
+    3. Metadata Cache - Document metadata (indefinite)
+    """
+    
+    def __init__(self, 
+                 query_cache_size: int = 1000,
+                 embedding_cache_size: int = 10000):
+        # Query result cache (1-hour TTL)
+        self.query_cache = OrderedDict()
+        self.query_cache_size = query_cache_size
+        self.query_cache_ttl = 3600  # 1 hour
+        
+        # Embedding cache (24-hour TTL)
+        self.embedding_cache = OrderedDict()
+        self.embedding_cache_size = embedding_cache_size
+        self.embedding_cache_ttl = 86400  # 24 hours
+        
+        # Metadata cache (no expiry)
+        self.metadata_cache = {}
+        
+        # Thread locks for thread-safe operations
+        self.query_lock = threading.Lock()
+        self.embedding_lock = threading.Lock()
+        self.metadata_lock = threading.Lock()
+        
+        # Statistics
+        self.query_hits = 0
+        self.query_misses = 0
+        self.embedding_hits = 0
+        self.embedding_misses = 0
+        
+        logger.info("CacheManager initialized")
+    
+    def _generate_cache_key(self, text: str) -> str:
+        """Generate cache key from text"""
+        return hashlib.sha256(text.encode()).hexdigest()
+    
+    def get_query_result(self, query: str) -> Optional[Dict]:
+        """
+        Get cached query result
+        
+        Returns:
+            Cached result or None if not found/expired
+        """
+        with self.query_lock:
+            cache_key = self._generate_cache_key(query)
+            
+            if cache_key in self.query_cache:
+                cached_data = self.query_cache[cache_key]
+                
+                # Check TTL
+                if time.time() - cached_data['timestamp'] < self.query_cache_ttl:
+                    # Move to end (LRU)
+                    self.query_cache.move_to_end(cache_key)
+                    self.query_hits += 1
+                    logger.debug(f"Query cache HIT for: {query[:50]}...")
+                    return cached_data['result']
+                else:
+                    # Expired, remove
+                    del self.query_cache[cache_key]
+            
+            self.query_misses += 1
+            logger.debug(f"Query cache MISS for: {query[:50]}...")
+            return None
+    
+    def set_query_result(self, query: str, result: Dict):
+        """Cache query result"""
+        with self.query_lock:
+            cache_key = self._generate_cache_key(query)
+            
+            # Evict oldest if at capacity
+            if len(self.query_cache) >= self.query_cache_size:
+                self.query_cache.popitem(last=False)
+            
+            self.query_cache[cache_key] = {
+                'result': result,
+                'timestamp': time.time()
+            }
+            logger.debug(f"Cached query result: {query[:50]}...")
+    
+    def get_embedding(self, text: str) -> Optional[List[float]]:
+        """Get cached embedding"""
+        with self.embedding_lock:
+            cache_key = self._generate_cache_key(text)
+            
+            if cache_key in self.embedding_cache:
+                cached_data = self.embedding_cache[cache_key]
+                
+                # Check TTL
+                if time.time() - cached_data['timestamp'] < self.embedding_cache_ttl:
+                    self.embedding_cache.move_to_end(cache_key)
+                    self.embedding_hits += 1
+                    return cached_data['embedding']
+                else:
+                    del self.embedding_cache[cache_key]
+            
+            self.embedding_misses += 1
+            return None
+    
+    def set_embedding(self, text: str, embedding: List[float]):
+        """Cache embedding"""
+        with self.embedding_lock:
+            cache_key = self._generate_cache_key(text)
+            
+            if len(self.embedding_cache) >= self.embedding_cache_size:
+                self.embedding_cache.popitem(last=False)
+            
+            self.embedding_cache[cache_key] = {
+                'embedding': embedding,
+                'timestamp': time.time()
+            }
+    
+    def get_cache_stats(self) -> Dict:
+        """Get cache statistics"""
+        query_hit_rate = (
+            self.query_hits / (self.query_hits + self.query_misses)
+            if (self.query_hits + self.query_misses) > 0 else 0
+        )
+        
+        embedding_hit_rate = (
+            self.embedding_hits / (self.embedding_hits + self.embedding_misses)
+            if (self.embedding_hits + self.embedding_misses) > 0 else 0
+        )
+        
+        return {
+            'query_cache': {
+                'size': len(self.query_cache),
+                'capacity': self.query_cache_size,
+                'hits': self.query_hits,
+                'misses': self.query_misses,
+                'hit_rate': f"{query_hit_rate:.2%}"
+            },
+            'embedding_cache': {
+                'size': len(self.embedding_cache),
+                'capacity': self.embedding_cache_size,
+                'hits': self.embedding_hits,
+                'misses': self.embedding_misses,
+                'hit_rate': f"{embedding_hit_rate:.2%}"
+            }
+        }
+    
+    def clear_all_caches(self):
+        """Clear all caches (useful for testing)"""
+        with self.query_lock, self.embedding_lock, self.metadata_lock:
+            self.query_cache.clear()
+            self.embedding_cache.clear()
+            self.metadata_cache.clear()
+            logger.info("All caches cleared")
+```
+
+### 6.2 Integrate Caching into RAG Pipeline
+
+Update `src/rag_pipeline.py` to use caching:
+
+```python
+from src.cache.cache_manager import CacheManager
+
+class RAGPipeline:
+    def __init__(self):
+        self.embedding_generator = EmbeddingGenerator()
+        self.vector_store = VectorStore()
+        self.response_generator = ResponseGenerator()
+        self.cache_manager = CacheManager()  # Add cache manager
+    
+    def query(self, query: str) -> Dict:
+        """
+        Process query with cache-first strategy
+        """
+        start_time = time.time()
+        
+        # 1. Check query cache first (73% hit rate)
+        cached_result = self.cache_manager.get_query_result(query)
+        if cached_result:
+            logger.info(f"Returning cached result for query")
+            cached_result['metadata']['cache_hit'] = True
+            return cached_result
+        
+        # 2. Generate query embedding (with embedding cache)
+        query_embedding = self._get_embedding_cached(query)
+        
+        # 3. Vector search
+        search_results = self.vector_store.search(
+            query_embedding=query_embedding,
+            top_k=self._adaptive_top_k(query)
+        )
+        
+        # 4. Generate response
+        response = self.response_generator.generate(query, search_results)
+        
+        # 5. Add metadata
+        response['metadata'] = {
+            'query_time': time.time() - start_time,
+            'cache_hit': False
+        }
+        
+        # 6. Cache the result
+        self.cache_manager.set_query_result(query, response)
+        
+        return response
+    
+    def _get_embedding_cached(self, text: str) -> List[float]:
+        """Get embedding with cache check"""
+        # Check cache first
+        cached_embedding = self.cache_manager.get_embedding(text)
+        if cached_embedding:
+            return cached_embedding
+        
+        # Generate new embedding
+        embedding = self.embedding_generator.generate(text)
+        
+        # Cache it
+        self.cache_manager.set_embedding(text, embedding)
+        
+        return embedding
+    
+    def _adaptive_top_k(self, query: str) -> int:
+        """Adaptive top-k based on query complexity"""
+        query_length = len(query)
+        if query_length < 50:
+            return 3  # Short query - focused results
+        elif query_length < 200:
+            return 5  # Medium query - balanced
+        else:
+            return 7  # Complex query - comprehensive
+```
+
+---
+
+## 7. Citation Management System
+
+### 7.1 Create Citation Manager
+
+Create `src/citation/citation_manager.py`:
+
+```python
+import re
+import logging
+from typing import List, Dict, Tuple
+
+logger = logging.getLogger(__name__)
+
+class CitationManager:
+    """
+    Manages intelligent citation matching between LLM response
+    and source documents
+    """
+    
+    def add_citations(self, 
+                      answer: str, 
+                      source_chunks: List[Dict]) -> Tuple[str, List[Dict]]:
+        """
+        Add citation markers to answer and create source list
+        
+        Args:
+            answer: LLM-generated answer
+            source_chunks: Retrieved document chunks
+            
+        Returns:
+            (answer_with_citations, formatted_sources)
+        """
+        # Parse existing citation markers like [1], [2]
+        citation_pattern = r'\[(\d+)\]'
+        citations_found = re.findall(citation_pattern, answer)
+        
+        # Create formatted sources list
+        formatted_sources = []
+        for i, chunk in enumerate(source_chunks, start=1):
+            if str(i) in citations_found:
+                formatted_sources.append({
+                    'number': i,
+                    'filename': chunk.get('filename', 'Unknown'),
+                    'text': self._truncate_text(chunk['text'], 200),
+                    'page_number': chunk.get('metadata', {}).get('page_number'),
+                    'score': chunk.get('score', 0.0),
+                    'document_id': chunk.get('document_id')
+                })
+        
+        # If LLM didn't add citations, add them intelligently
+        if not citations_found:
+            answer_with_citations = self._add_smart_citations(answer, source_chunks)
+            # Add all sources since we manually added citations
+            formatted_sources = [
+                {
+                    'number': i,
+                    'filename': chunk.get('filename', 'Unknown'),
+                    'text': self._truncate_text(chunk['text'], 200),
+                    'page_number': chunk.get('metadata', {}).get('page_number'),
+                    'score': chunk.get('score', 0.0),
+                    'document_id': chunk.get('document_id')
+                }
+                for i, chunk in enumerate(source_chunks, start=1)
+            ]
+        else:
+            answer_with_citations = answer
+        
+        logger.info(f"Added {len(formatted_sources)} citations to answer")
+        return answer_with_citations, formatted_sources
+    
+    def _add_smart_citations(self, answer: str, sources: List[Dict]) -> str:
+        """
+        Intelligently add citation markers to answer sentences
+        """
+        # Split answer into sentences
+        sentences = re.split(r'([.!?]+)', answer)
+        sentences = [s for s in sentences if s.strip()]
+        
+        cited_answer = ""
+        citation_idx = 1
+        
+        for i in range(0, len(sentences), 2):
+            sentence = sentences[i]
+            punctuation = sentences[i+1] if i+1 < len(sentences) else ""
+            
+            # Add citation after factual sentences
+            if self._is_factual_sentence(sentence):
+                cited_answer += f"{sentence}{punctuation} [{citation_idx}] "
+                citation_idx = min(citation_idx + 1, len(sources))
+            else:
+                cited_answer += f"{sentence}{punctuation} "
+        
+        return cited_answer.strip()
+    
+    def _is_factual_sentence(self, sentence: str) -> bool:
+        """Check if sentence contains factual information"""
+        # Heuristic: sentences with numbers, dates, or specific nouns
+        has_number = bool(re.search(r'\d+', sentence))
+        has_date = bool(re.search(r'\b(January|February|March|April|May|June|July|August|September|October|November|December|\d{4})\b', sentence))
+        has_specific_term = bool(re.search(r'\b(revenue|profit|loss|increase|decrease|reported|stated|shows|indicates)\b', sentence, re.IGNORECASE))
+        
+        return has_number or has_date or has_specific_term
+    
+    def _truncate_text(self, text: str, max_length: int) -> str:
+        """Truncate text to max length"""
+        if len(text) <= max_length:
+            return text
+        return text[:max_length] + "..."
+```
+
+### 7.2 Integrate Citations into Response Generator
+
+Update `src/llm/response_generator.py`:
+
+```python
+from src.citation.citation_manager import CitationManager
+
+class ResponseGenerator:
+    def __init__(self):
+        self.client = OllamaClient()
+        self.citation_manager = CitationManager()
+    
+    def generate(self, query: str, context_chunks: List[Dict]) -> Dict:
+        """Generate response with citations"""
+        # Create prompt
+        prompt = create_rag_prompt(query, context_chunks)
+        
+        # Generate response
+        response = self.client.generate_response(prompt, stream=False)
+        
+        # Add citations
+        answer_with_citations, sources = self.citation_manager.add_citations(
+            response, context_chunks
+        )
+        
+        return {
+            'answer': answer_with_citations,
+            'sources': sources,
+            'num_sources': len(sources)
+        }
+```
+
+---
+
+## 8. Semantic Chunking Enhancement
+
+### 8.1 Upgrade Document Chunker
+
+Update `src/document_processor/chunker.py` with semantic awareness:
+
+```python
+import re
+import logging
+from typing import List, Dict
+
+logger = logging.getLogger(__name__)
+
+class SemanticChunker:
+    """
+    Enhanced chunker that respects semantic boundaries
+    """
+    
+    def __init__(self, chunk_size: int = 500, overlap: int = 50):
+        self.chunk_size = chunk_size
+        self.overlap = overlap
+        self.min_chunk_size = 150  # Merge threshold
+    
+    def chunk_text(self, text: str, metadata: Dict = None) -> List[Dict]:
+        """
+        Chunk text with semantic boundary awareness
+        
+        Args:
+            text: Input text
+            metadata: Document metadata
+            
+        Returns:
+            List of chunk dictionaries
+        """
+        # Split into paragraphs first
+        paragraphs = self._split_paragraphs(text)
+        
+        chunks = []
+        current_chunk = ""
+        current_tokens = 0
+        start_char = 0
+        
+        for para in paragraphs:
+            para_tokens = self._count_tokens(para)
+            
+            # If paragraph fits in current chunk, add it
+            if current_tokens + para_tokens <= self.chunk_size:
+                current_chunk += para + "\n\n"
+                current_tokens += para_tokens
+            else:
+                # Save current chunk if not empty
+                if current_chunk:
+                    chunks.append({
+                        'text': current_chunk.strip(),
+                        'token_count': current_tokens,
+                        'start_char': start_char,
+                        'end_char': start_char + len(current_chunk)
+                    })
+                    
+                    # Start new chunk with overlap
+                    overlap_text = self._get_overlap(current_chunk)
+                    start_char += len(current_chunk) - len(overlap_text)
+                    current_chunk = overlap_text + para + "\n\n"
+                    current_tokens = self._count_tokens(current_chunk)
+                else:
+                    # Paragraph too large, split by sentences
+                    if para_tokens > self.chunk_size:
+                        sentence_chunks = self._chunk_by_sentences(para, start_char)
+                        chunks.extend(sentence_chunks)
+                        start_char += len(para)
+                        current_chunk = ""
+                        current_tokens = 0
+                    else:
+                        current_chunk = para + "\n\n"
+                        current_tokens = para_tokens
+        
+        # Add final chunk
+        if current_chunk:
+            chunks.append({
+                'text': current_chunk.strip(),
+                'token_count': current_tokens,
+                'start_char': start_char,
+                'end_char': start_char + len(current_chunk)
+            })
+        
+        # Merge small chunks
+        chunks = self._merge_small_chunks(chunks)
+        
+        # Add metadata
+        for i, chunk in enumerate(chunks):
+            chunk['chunk_index'] = i
+            chunk['metadata'] = metadata or {}
+        
+        logger.info(f"Created {len(chunks)} semantic chunks")
+        return chunks
+    
+    def _split_paragraphs(self, text: str) -> List[str]:
+        """Split text into paragraphs"""
+        # Split on double newlines or multiple spaces
+        paragraphs = re.split(r'\n\s*\n|\n\n+', text)
+        return [p.strip() for p in paragraphs if p.strip()]
+    
+    def _chunk_by_sentences(self, text: str, start_char: int) -> List[Dict]:
+        """Chunk large paragraph by sentences"""
+        sentences = re.split(r'([.!?]+\s+)', text)
+        chunks = []
+        current_chunk = ""
+        current_tokens = 0
+        chunk_start = start_char
+        
+        for i in range(0, len(sentences), 2):
+            sentence = sentences[i]
+            punctuation = sentences[i+1] if i+1 < len(sentences) else ""
+            full_sentence = sentence + punctuation
+            
+            sent_tokens = self._count_tokens(full_sentence)
+            
+            if current_tokens + sent_tokens <= self.chunk_size:
+                current_chunk += full_sentence
+                current_tokens += sent_tokens
+            else:
+                if current_chunk:
+                    chunks.append({
+                        'text': current_chunk.strip(),
+                        'token_count': current_tokens,
+                        'start_char': chunk_start,
+                        'end_char': chunk_start + len(current_chunk)
+                    })
+                    chunk_start += len(current_chunk)
+                
+                current_chunk = full_sentence
+                current_tokens = sent_tokens
+        
+        if current_chunk:
+            chunks.append({
+                'text': current_chunk.strip(),
+                'token_count': current_tokens,
+                'start_char': chunk_start,
+                'end_char': chunk_start + len(current_chunk)
+            })
+        
+        return chunks
+    
+    def _get_overlap(self, text: str) -> str:
+        """Get overlap text from end of chunk"""
+        tokens = text.split()
+        if len(tokens) <= self.overlap:
+            return text
+        return ' '.join(tokens[-self.overlap:]) + " "
+    
+    def _merge_small_chunks(self, chunks: List[Dict]) -> List[Dict]:
+        """Merge chunks smaller than min_chunk_size"""
+        if not chunks:
+            return chunks
+        
+        merged = []
+        i = 0
+        
+        while i < len(chunks):
+            current = chunks[i]
+            
+            # If chunk is too small and not the last one
+            if current['token_count'] < self.min_chunk_size and i < len(chunks) - 1:
+                # Merge with next chunk
+                next_chunk = chunks[i + 1]
+                merged_text = current['text'] + "\n\n" + next_chunk['text']
+                merged.append({
+                    'text': merged_text,
+                    'token_count': current['token_count'] + next_chunk['token_count'],
+                    'start_char': current['start_char'],
+                    'end_char': next_chunk['end_char']
+                })
+                i += 2
+            else:
+                merged.append(current)
+                i += 1
+        
+        return merged
+    
+    def _count_tokens(self, text: str) -> int:
+        """Estimate token count (rough approximation)"""
+        # Rough estimate: 1 token ≈ 4 characters
+        return len(text) // 4
+```
+
+---
 
 ## 9. Phase 8: Testing & Quality Assurance (Week 5-6)
 

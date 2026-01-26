@@ -1647,7 +1647,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     
     # Ollama
-    OLLAMA_BASE_URL: str = "${OLLAMA_BASE_URL}"  # Environment variable for Ollama API endpoint
+    OLLAMA_BASE_URL: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
     OLLAMA_EMBEDDING_MODEL: str = "nomic-embed-text"
     OLLAMA_LLM_MODEL: str = "llama2"
     

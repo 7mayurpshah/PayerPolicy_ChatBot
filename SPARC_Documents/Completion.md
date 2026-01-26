@@ -1075,8 +1075,9 @@ CACHE_TTL_SECONDS=3600
 WORKER_PROCESSES=4
 
 # Database
-DATABASE_URL=postgresql://user:pass@db.example.com/ragdb  # For production
+DATABASE_URL=postgresql://user:pass@db.example.com/ragdb  # For production (use secrets manager)
 # Or: sqlite:///data/rag.db for simple deployments
+# Note: Store credentials in environment secrets, not in .env files
 
 # Storage
 UPLOAD_FOLDER=/app/data/uploads

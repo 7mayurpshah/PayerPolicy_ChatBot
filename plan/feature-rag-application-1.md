@@ -3133,6 +3133,96 @@ def create_chunk_object(text, index, metadata):
     }
 ```
 
+### Build Tasks for Document Ingestion and Processing
+
+**Objective:** Implement document upload, validation, text extraction, and chunking functionality following Python best practices.
+
+#### Task 1: Set Up Document Processing Module Structure
+- [ ] Create `document_processor.py` module with proper docstrings following PEP 257
+- [ ] Define type hints for all function signatures using `typing` module (List, Dict, Optional, etc.)
+- [ ] Add module-level docstring explaining the purpose and main components
+- [ ] Import required libraries: `PyPDF2`/`pdfplumber` for PDF, `openpyxl` for Excel, `pathlib` for file operations
+- [ ] Set up logging configuration for document processing operations
+
+#### Task 2: Implement File Upload and Validation Functions
+- [ ] Implement `handle_file_upload(files: List[FileStorage], user_id: str) -> Tuple[List[Dict], List[Dict]]`
+  - Add comprehensive docstring with parameters, returns, and raises sections
+  - Include input validation with clear error messages
+  - Handle edge cases: empty file list, None values, invalid user_id
+- [ ] Implement `validate_file_type(file: FileStorage) -> bool`
+  - Add docstring explaining supported file types and validation logic
+  - Use type hints for all parameters and return values
+  - Handle case-insensitive extension checking
+- [ ] Implement `validate_file_size(file: FileStorage, max_size: int = 104857600) -> bool`
+  - Add docstring with parameter descriptions (default 100MB)
+  - Include edge case handling for zero-byte files
+  - Log validation failures with appropriate context
+
+#### Task 3: Implement Text Extraction Functions
+- [ ] Implement `extract_text_from_document(file_path: str, file_type: str) -> Dict[str, Any]`
+  - Add comprehensive docstring explaining return structure
+  - Include try-except blocks with specific exception handling
+  - Add logging for extraction start, progress, and completion
+- [ ] Implement `extract_pdf_text(file_path: str) -> Dict[str, Any]`
+  - Use proper exception handling (PyPDF2.PdfReadError, FileNotFoundError)
+  - Add docstring explaining metadata structure and page handling
+  - Handle corrupted PDFs gracefully with informative error messages
+  - Include progress logging for large documents
+- [ ] Implement `extract_excel_text(file_path: str) -> Dict[str, Any]`
+  - Handle different Excel formats (.xlsx, .xls) appropriately
+  - Add docstring explaining sheet iteration and data extraction
+  - Include error handling for protected/encrypted workbooks
+  - Handle empty sheets and cells with None values correctly
+
+#### Task 4: Implement Document Chunking Functions
+- [ ] Implement `chunk_document(text: str, metadata: Dict, chunk_size: int = 500, overlap: int = 50) -> List[Dict]`
+  - Add detailed docstring explaining chunking strategy and parameters
+  - Use type hints for all parameters and return complex types
+  - Include edge cases: empty text, text shorter than chunk_size
+  - Add comments explaining the overlap logic and why it's important
+- [ ] Implement `split_into_paragraphs(text: str) -> List[str]`
+  - Add docstring with examples of paragraph detection
+  - Handle different paragraph separators (\\n\\n, \\r\\n\\r\\n)
+  - Filter out empty strings and whitespace-only paragraphs
+- [ ] Implement `split_large_paragraph(paragraph: str, max_size: int, overlap: int) -> List[str]`
+  - Add docstring explaining sentence-level splitting strategy
+  - Handle edge case where single sentence exceeds max_size
+  - Include proper overlap calculation between chunks
+- [ ] Implement `create_chunk_object(text: str, index: int, metadata: Dict) -> Dict[str, Any]`
+  - Add docstring describing the chunk object structure
+  - Generate unique chunk_id using UUID
+  - Include all required metadata fields with proper types
+
+#### Task 5: Add Helper Functions and Utilities
+- [ ] Implement `count_tokens(text: str) -> int` using appropriate tokenizer
+  - Add docstring explaining tokenization method used
+  - Handle empty strings and None values
+- [ ] Implement `get_file_extension(filename: str) -> str`
+  - Add docstring with examples
+  - Handle filenames without extensions
+- [ ] Implement `save_to_temp_storage(file: FileStorage) -> str`
+  - Add docstring explaining temp file management
+  - Use `tempfile` module for secure temp file creation
+  - Include cleanup logic or documentation about cleanup responsibility
+
+#### Task 6: Write Unit Tests
+- [ ] Create `test_document_processor.py` with docstrings for each test
+- [ ] Write tests for file validation (valid files, invalid extensions, oversized files)
+- [ ] Write tests for PDF extraction (valid PDFs, corrupted PDFs, empty PDFs)
+- [ ] Write tests for Excel extraction (single sheet, multiple sheets, empty sheets)
+- [ ] Write tests for chunking (normal text, very short text, very long paragraphs)
+- [ ] Write tests for edge cases (None inputs, empty strings, special characters)
+- [ ] Ensure all tests follow naming convention `test_<function_name>_<scenario>`
+- [ ] Add docstrings to test functions explaining what is being tested
+
+#### Task 7: Documentation and Code Quality
+- [ ] Ensure all functions have proper docstrings following PEP 257
+- [ ] Verify all type hints are present and correct
+- [ ] Run linter (pylint/flake8) and fix any style violations
+- [ ] Ensure line length does not exceed 79 characters per PEP 8
+- [ ] Add inline comments for complex logic explaining design decisions
+- [ ] Create module-level documentation explaining the document processing pipeline
+
 ---
 
 ## Embedding Generation
@@ -3214,6 +3304,88 @@ def normalize_vector(vector):
         return vector
     return [x / magnitude for x in vector]
 ```
+
+### Build Tasks for Embedding Generation
+
+**Objective:** Implement embedding generation functionality using Ollama's nomic-embed-text model with proper error handling and type safety.
+
+#### Task 1: Set Up Embedding Module Structure
+- [ ] Create `embedding_generator.py` module with comprehensive module-level docstring
+- [ ] Add type hints import: `from typing import List, Dict, Optional, Union, Any`
+- [ ] Import Ollama client library and configure connection settings
+- [ ] Set up logging for embedding generation operations
+- [ ] Define constants for model name, embedding dimensions, and API endpoints
+
+#### Task 2: Implement Ollama Client Initialization
+- [ ] Implement `initialize_ollama_client(base_url: str, timeout: int = 30) -> OllamaClient`
+  - Add docstring explaining connection parameters and configuration
+  - Include error handling for connection failures
+  - Add retry logic with exponential backoff for network issues
+  - Log successful connection and model availability
+  - Handle edge cases: invalid URL, unreachable host, timeout
+
+#### Task 3: Implement Core Embedding Generation Functions
+- [ ] Implement `generate_embedding(text: str, client: OllamaClient, model: str = "nomic-embed-text") -> List[float]`
+  - Add comprehensive docstring with parameter descriptions and return type
+  - Include input validation (non-empty text, valid client)
+  - Add error handling for API failures (timeout, rate limiting, model unavailable)
+  - Log embedding generation with text length and execution time
+  - Handle edge cases: empty text, very long text, special characters
+- [ ] Implement `generate_embeddings_batch(texts: List[str], client: OllamaClient, batch_size: int = 10) -> List[List[float]]`
+  - Add docstring explaining batching strategy and performance benefits
+  - Include progress logging for large batches
+  - Implement batch processing with configurable size
+  - Handle partial failures gracefully (return successful embeddings, log failures)
+  - Add retry logic for failed individual items in batch
+
+#### Task 4: Implement Embedding Validation and Processing
+- [ ] Implement `validate_embedding(embedding: List[float], expected_dim: int = 768) -> bool`
+  - Add docstring explaining validation criteria
+  - Check embedding dimensions match expected size
+  - Validate that values are floats and not NaN/Inf
+  - Log validation failures with details
+- [ ] Implement `normalize_embedding(embedding: List[float]) -> List[float]`
+  - Add docstring explaining L2 normalization and why it's used
+  - Handle zero-magnitude vectors (edge case)
+  - Include mathematical explanation in comments
+  - Return normalized vector with preserved precision
+
+#### Task 5: Implement Error Handling and Retry Logic
+- [ ] Implement `generate_embedding_with_retry(text: str, client: OllamaClient, max_retries: int = 3) -> List[float]`
+  - Add docstring explaining retry strategy and backoff
+  - Implement exponential backoff between retries
+  - Log each retry attempt with reason for failure
+  - Raise descriptive exception after max retries exhausted
+  - Handle different error types (network, API, timeout) appropriately
+
+#### Task 6: Implement Caching for Embeddings (Optional but Recommended)
+- [ ] Implement `get_cached_embedding(text: str, cache: Dict[str, List[float]]) -> Optional[List[float]]`
+  - Add docstring explaining cache key generation and lookup
+  - Use hash of text as cache key (handle long texts)
+  - Return None if not in cache
+- [ ] Implement `cache_embedding(text: str, embedding: List[float], cache: Dict[str, List[float]]) -> None`
+  - Add docstring explaining cache storage strategy
+  - Implement cache size limits to prevent memory issues
+  - Add LRU eviction if cache grows too large
+
+#### Task 7: Write Unit Tests
+- [ ] Create `test_embedding_generator.py` with proper test structure
+- [ ] Write tests for client initialization (successful connection, connection failure)
+- [ ] Write tests for single embedding generation (valid text, empty text, very long text)
+- [ ] Write tests for batch embedding generation (small batch, large batch, partial failures)
+- [ ] Write tests for embedding validation (valid embedding, wrong dimensions, invalid values)
+- [ ] Write tests for normalization (normal vector, zero vector, single-element vector)
+- [ ] Write tests for retry logic (success after retry, max retries exhausted)
+- [ ] Mock Ollama API responses to avoid external dependencies in tests
+- [ ] Ensure all test functions have descriptive docstrings
+
+#### Task 8: Documentation and Code Quality
+- [ ] Ensure all functions have complete docstrings following PEP 257
+- [ ] Verify type hints are present for all parameters and return values
+- [ ] Add inline comments explaining complex embedding operations
+- [ ] Run linter and fix any PEP 8 violations (line length, spacing, naming)
+- [ ] Document the Ollama model requirements and configuration
+- [ ] Create usage examples in module docstring or separate examples file
 
 ---
 
@@ -3318,6 +3490,115 @@ def rerank_results(query, results, reranker_model=None):
     reranked = sorted(results, key=lambda x: x['rerank_score'], reverse=True)
     return reranked
 ```
+
+### Build Tasks for Vector Database Operations
+
+**Objective:** Implement vector database functionality for storing and retrieving embeddings with efficient similarity search.
+
+#### Task 1: Set Up Vector Database Module
+- [ ] Create `vector_database.py` module with comprehensive docstring
+- [ ] Add type hints: `from typing import List, Dict, Optional, Tuple, Any`
+- [ ] Choose and import vector database library (ChromaDB, FAISS, or similar)
+- [ ] Set up logging for database operations
+- [ ] Define database schema and collection structure
+
+#### Task 2: Implement Database Initialization
+- [ ] Implement `initialize_vector_database(db_path: str, collection_name: str = "documents") -> VectorDatabase`
+  - Add docstring explaining database setup and persistence
+  - Create database directory if it doesn't exist
+  - Initialize collection with proper configuration
+  - Set embedding dimension and distance metric (cosine similarity)
+  - Log successful initialization with database location
+  - Handle edge cases: existing database, corrupted files, permission errors
+- [ ] Implement `create_collection(db: VectorDatabase, name: str, metadata: Dict[str, Any]) -> Collection`
+  - Add docstring with parameters and collection configuration details
+  - Validate collection name (no special characters, length limits)
+  - Set up collection metadata schema
+  - Handle collection already exists scenario
+
+#### Task 3: Implement Vector Storage Functions
+- [ ] Implement `add_vectors(db: VectorDatabase, embeddings: List[List[float]], documents: List[str], metadata: List[Dict], ids: List[str]) -> None`
+  - Add comprehensive docstring explaining batch insertion
+  - Validate input list lengths match
+  - Validate embedding dimensions are consistent
+  - Include transaction handling for atomic operations
+  - Log number of vectors added and execution time
+  - Handle edge cases: empty lists, duplicate IDs, invalid embeddings
+- [ ] Implement `add_single_vector(db: VectorDatabase, embedding: List[float], document: str, metadata: Dict, doc_id: str) -> bool`
+  - Add docstring explaining single insertion use case
+  - Validate embedding dimensions
+  - Check for duplicate ID before insertion
+  - Return success status
+  - Log insertion with document ID
+
+#### Task 4: Implement Vector Search Functions
+- [ ] Implement `search_similar_documents(query_embedding: List[float], db: VectorDatabase, top_k: int = 5, threshold: float = 0.0) -> List[Dict]`
+  - Add comprehensive docstring with search parameters
+  - Validate query embedding dimensions
+  - Perform similarity search with configurable distance metric
+  - Filter results by threshold (minimum similarity score)
+  - Return results with scores, documents, and metadata
+  - Log search execution time and number of results
+  - Handle edge cases: empty database, no results above threshold
+- [ ] Implement `search_with_filters(query_embedding: List[float], db: VectorDatabase, filters: Dict[str, Any], top_k: int = 5) -> List[Dict]`
+  - Add docstring explaining metadata filtering capabilities
+  - Apply filters before or after vector search (configurable)
+  - Support multiple filter conditions (AND/OR logic)
+  - Return filtered and ranked results
+  - Log filter criteria and result count
+
+#### Task 5: Implement Result Ranking and Re-ranking
+- [ ] Implement `calculate_similarity_scores(query_embedding: List[float], result_embeddings: List[List[float]]) -> List[float]`
+  - Add docstring explaining similarity calculation method
+  - Implement cosine similarity computation
+  - Handle edge cases: zero vectors, dimension mismatches
+  - Return list of similarity scores
+- [ ] Implement `rerank_results(query: str, results: List[Dict], reranker_model: Optional[Any] = None) -> List[Dict]`
+  - Add docstring explaining re-ranking strategy
+  - If reranker_model is None, return results unchanged
+  - Apply cross-encoder re-ranking if model provided
+  - Combine vector similarity and re-ranking scores
+  - Sort by final combined score
+  - Log re-ranking impact on result order
+
+#### Task 6: Implement Database Management Functions
+- [ ] Implement `delete_document(db: VectorDatabase, doc_id: str) -> bool`
+  - Add docstring explaining deletion process
+  - Validate document ID exists
+  - Remove all chunks associated with document
+  - Log deletion with document ID
+  - Return success status
+- [ ] Implement `update_document_metadata(db: VectorDatabase, doc_id: str, metadata: Dict) -> bool`
+  - Add docstring explaining metadata update process
+  - Validate document exists and metadata structure
+  - Update metadata for all chunks of document
+  - Log update operation
+- [ ] Implement `get_database_stats(db: VectorDatabase) -> Dict[str, Any]`
+  - Add docstring describing returned statistics
+  - Return document count, chunk count, database size
+  - Include collection information and configuration
+  - Handle empty database gracefully
+
+#### Task 7: Write Unit Tests
+- [ ] Create `test_vector_database.py` with proper structure
+- [ ] Write tests for database initialization (new database, existing database, invalid path)
+- [ ] Write tests for vector insertion (single, batch, duplicate IDs, invalid dimensions)
+- [ ] Write tests for similarity search (normal query, empty database, with threshold)
+- [ ] Write tests for filtered search (single filter, multiple filters, no matches)
+- [ ] Write tests for re-ranking (with and without reranker model)
+- [ ] Write tests for deletion and updates (existing documents, non-existent documents)
+- [ ] Write tests for database statistics (empty database, populated database)
+- [ ] Use temporary directories for test databases (cleanup after tests)
+- [ ] Ensure all test functions have descriptive docstrings
+
+#### Task 8: Documentation and Code Quality
+- [ ] Ensure all functions have complete docstrings following PEP 257
+- [ ] Verify type hints for all parameters and return values
+- [ ] Add inline comments explaining vector operations and algorithms
+- [ ] Run linter and address PEP 8 violations
+- [ ] Document database choice rationale and configuration options
+- [ ] Create performance benchmarks documentation for large-scale operations
+- [ ] Add usage examples showing common patterns
 
 ---
 
@@ -3608,6 +3889,151 @@ def format_sources(chunks):
     return sources
 ```
 
+### Build Tasks for RAG Pipeline
+
+**Objective:** Implement the complete RAG query processing pipeline integrating retrieval and generation with proper error handling and optimization.
+
+#### Task 1: Set Up RAG Pipeline Module
+- [ ] Create `rag_pipeline.py` module with comprehensive module docstring
+- [ ] Add type hints: `from typing import List, Dict, Optional, Tuple, Any, Generator`
+- [ ] Import required modules: embedding_generator, vector_database, document_processor
+- [ ] Set up logging for pipeline operations
+- [ ] Define pipeline configuration constants (timeouts, retry limits, token budgets)
+
+#### Task 2: Implement Query Validation and Preprocessing
+- [ ] Implement `validate_query(user_query: str) -> Optional[str]`
+  - Add docstring explaining validation rules
+  - Check query is not empty or only whitespace
+  - Validate minimum length (e.g., 3 characters)
+  - Validate maximum length (e.g., 1000 characters)
+  - Check for potentially malicious patterns
+  - Return error message if invalid, None if valid
+  - Log validation failures with reason
+- [ ] Implement `preprocess_query(query: str) -> str`
+  - Add docstring explaining preprocessing steps
+  - Trim leading/trailing whitespace
+  - Normalize multiple spaces to single space
+  - Handle special characters appropriately
+  - Return cleaned query
+
+#### Task 3: Implement Main RAG Query Processing
+- [ ] Implement `process_rag_query(user_query: str, conversation_id: Optional[str] = None) -> Dict[str, Any]`
+  - Add comprehensive docstring explaining complete pipeline flow
+  - Validate input query using validate_query
+  - Generate query embedding with error handling
+  - Retrieve similar documents from vector database
+  - Build context from retrieved chunks
+  - Construct RAG prompt with context
+  - Generate LLM response
+  - Add citations to answer
+  - Format and return complete response
+  - Log each step with timing information
+  - Handle errors at each step gracefully
+  - Include edge case handling: no results, timeout, API failures
+
+#### Task 4: Implement Context Building Functions
+- [ ] Implement `build_context_from_chunks(chunks: List[Dict], max_tokens: int = 2000) -> str`
+  - Add docstring explaining context construction strategy
+  - Sort chunks by relevance score
+  - Concatenate chunk texts with separators
+  - Track token count to stay within limit
+  - Include source attribution in context
+  - Handle edge case: empty chunks list
+  - Return formatted context string
+- [ ] Implement `calculate_adaptive_top_k(query: str) -> int`
+  - Add docstring explaining adaptive retrieval strategy
+  - Analyze query complexity (word count, question type)
+  - Return appropriate top_k value (3-10 range)
+  - Add comments explaining rationale for different values
+
+#### Task 5: Implement Prompt Construction
+- [ ] Implement `create_rag_prompt(user_query: str, context: str, chunks: List[Dict]) -> str`
+  - Add docstring explaining prompt structure
+  - Create system prompt explaining RAG task
+  - Include context section with retrieved information
+  - Add user query clearly separated
+  - Include instructions for citation format
+  - Handle empty context case
+  - Return complete formatted prompt
+- [ ] Implement `create_no_results_prompt(query: str) -> str`
+  - Add docstring for fallback when no documents found
+  - Create helpful response indicating no relevant documents
+  - Suggest query refinement strategies
+  - Return formatted prompt
+
+#### Task 6: Implement LLM Response Generation
+- [ ] Implement `generate_llm_response(prompt: str, client: Any, model: str = "llama2", temperature: float = 0.7) -> str`
+  - Add comprehensive docstring with all parameters explained
+  - Validate prompt is not empty
+  - Set up generation parameters (temperature, top_p, max_tokens)
+  - Call Ollama API with error handling
+  - Handle streaming vs non-streaming responses
+  - Log generation time and token usage
+  - Handle edge cases: timeout, rate limiting, model unavailable
+  - Raise descriptive exceptions on failure
+- [ ] Implement `generate_llm_response_stream(prompt: str, client: Any, model: str = "llama2") -> Generator[str, None, None]`
+  - Add docstring explaining streaming response
+  - Yield response chunks as they arrive
+  - Handle connection errors and interruptions
+  - Log streaming start and completion
+
+#### Task 7: Implement Citation and Source Attribution
+- [ ] Implement `add_citations_to_answer(answer: str, chunks: List[Dict]) -> str`
+  - Add docstring explaining citation strategy
+  - Parse answer to identify where citations are needed
+  - Match answer segments to source chunks
+  - Insert citation markers [1], [2], etc.
+  - Ensure citation numbers match source list
+  - Handle edge cases: no citations needed, ambiguous matches
+  - Return answer with inline citations
+- [ ] Implement `format_sources(chunks: List[Dict]) -> List[Dict[str, Any]]`
+  - Add docstring describing source formatting
+  - Extract relevant metadata (filename, page, score)
+  - Format for UI display
+  - Include chunk text preview
+  - Sort by relevance score
+  - Return list of formatted source objects
+
+#### Task 8: Implement Response Creation and Error Handling
+- [ ] Implement `create_response(cited_answer: str, sources: List[Dict], start_time: float) -> Dict[str, Any]`
+  - Add docstring explaining response structure
+  - Calculate total processing time
+  - Create response dictionary with all fields
+  - Include answer, sources, metadata, timing
+  - Add conversation_id if provided
+  - Return complete response object
+- [ ] Implement `create_error_response(error_message: str, status_code: int) -> Dict[str, Any]`
+  - Add docstring for error response format
+  - Include error message, status code, timestamp
+  - Log error details
+  - Return formatted error response
+- [ ] Implement `create_no_results_response(query: str) -> Dict[str, Any]`
+  - Add docstring for no results scenario
+  - Provide helpful message to user
+  - Suggest alternative query strategies
+  - Return formatted response
+
+#### Task 9: Write Unit Tests
+- [ ] Create `test_rag_pipeline.py` with comprehensive test coverage
+- [ ] Write tests for query validation (valid queries, empty, too short, too long)
+- [ ] Write tests for query preprocessing (whitespace, special chars)
+- [ ] Write tests for full pipeline (successful query, no results, errors)
+- [ ] Write tests for context building (normal chunks, empty chunks, token limits)
+- [ ] Write tests for prompt construction (with context, without context)
+- [ ] Write tests for citation addition (answer with citations, no citations needed)
+- [ ] Write tests for response formatting (success response, error response)
+- [ ] Mock external dependencies (Ollama API, vector database)
+- [ ] Ensure all test functions have clear docstrings
+
+#### Task 10: Documentation and Code Quality
+- [ ] Ensure all functions have complete docstrings following PEP 257
+- [ ] Verify type hints are correct and comprehensive
+- [ ] Add inline comments for complex pipeline logic
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Document the complete RAG pipeline flow with diagrams
+- [ ] Create usage examples showing different query scenarios
+- [ ] Document performance characteristics and optimization strategies
+
 ---
 
 ## Document Management
@@ -3773,6 +4199,150 @@ def delete_chunks_by_document_id(collection, document_id):
         collection.delete(ids=results['ids'])
         log_info(f"Deleted {len(results['ids'])} chunks for document {document_id}")
 ```
+
+### Build Tasks for Document Management
+
+**Objective:** Implement document lifecycle management including ingestion, listing, retrieval, and deletion with proper error handling.
+
+#### Task 1: Set Up Document Management Module
+- [ ] Create `document_manager.py` module with comprehensive docstring
+- [ ] Add type hints: `from typing import List, Dict, Optional, Tuple, Any`
+- [ ] Import required modules: document_processor, embedding_generator, vector_database
+- [ ] Set up logging for document management operations
+- [ ] Define document status constants (PENDING, PROCESSING, INDEXED, FAILED, DELETED)
+
+#### Task 2: Implement Document Ingestion Orchestration
+- [ ] Implement `ingest_document(file_path: str, file_type: str, user_id: str) -> Dict[str, Any]`
+  - Add comprehensive docstring explaining complete ingestion workflow
+  - Generate unique document_id using UUID
+  - Extract text using document_processor functions
+  - Chunk document with appropriate parameters
+  - Generate embeddings for all chunks (with batch processing)
+  - Store chunks and embeddings in vector database
+  - Move file to permanent storage location
+  - Update document metadata with status and statistics
+  - Log each step with timing information
+  - Implement comprehensive error handling for each step
+  - Roll back on failure (delete partial data, clean up files)
+  - Handle edge cases: corrupted files, embedding failures, database errors
+  - Return ingestion result with document_id and statistics
+
+#### Task 3: Implement Document Listing and Search
+- [ ] Implement `list_documents(user_id: str, page: int = 1, per_page: int = 50, search_term: Optional[str] = None) -> Dict[str, Any]`
+  - Add docstring explaining pagination and search functionality
+  - Validate pagination parameters (page >= 1, per_page between 1-100)
+  - Build database query with user_id filter
+  - Apply search filter if search_term provided
+  - Execute query with limit and offset for pagination
+  - Get total count for pagination metadata
+  - Calculate total_pages from count and per_page
+  - Return documents with pagination info
+  - Handle edge cases: invalid page, empty results
+- [ ] Implement `search_documents_by_metadata(user_id: str, filters: Dict[str, Any]) -> List[Dict]`
+  - Add docstring explaining metadata filtering
+  - Support filters: file_type, date_range, status
+  - Build dynamic query based on filters
+  - Return matching documents
+  - Log search criteria and result count
+
+#### Task 4: Implement Document Details and Statistics
+- [ ] Implement `get_document_details(document_id: str, user_id: str) -> Dict[str, Any]`
+  - Add docstring explaining detailed document information
+  - Fetch document metadata from database
+  - Validate document exists (raise DocumentNotFoundError if not)
+  - Validate user authorization (raise UnauthorizedAccessError if wrong user)
+  - Get chunk statistics (count, average size, token count)
+  - Get embedding statistics if available
+  - Return complete document information
+  - Handle edge cases: missing document, unauthorized access
+- [ ] Implement `get_chunk_statistics(document_id: str) -> Dict[str, Any]`
+  - Add docstring describing statistics returned
+  - Query vector database for chunk count
+  - Calculate average chunk size and token count
+  - Return statistics dictionary
+
+#### Task 5: Implement Document Deletion
+- [ ] Implement `delete_document(document_id: str, user_id: str) -> bool`
+  - Add comprehensive docstring explaining deletion process
+  - Fetch document metadata to validate existence and ownership
+  - Validate user has permission to delete
+  - Delete chunks from vector database first
+  - Delete physical file from storage
+  - Delete metadata from database
+  - Log deletion with document details
+  - Handle partial deletion failures gracefully
+  - Return success status
+  - Raise appropriate exceptions: DocumentNotFoundError, UnauthorizedAccessError
+- [ ] Implement `delete_chunks_by_document_id(db: Any, document_id: str) -> int`
+  - Add docstring explaining chunk deletion
+  - Query for all chunks with document_id
+  - Delete chunks from vector database
+  - Return count of deleted chunks
+  - Log deletion count
+
+#### Task 6: Implement Document Storage Management
+- [ ] Implement `move_to_permanent_storage(temp_path: str, document_id: str) -> str`
+  - Add docstring explaining storage organization
+  - Create permanent storage directory structure
+  - Move file from temp to permanent location
+  - Use document_id in filename for uniqueness
+  - Verify file integrity after move
+  - Delete temp file after successful move
+  - Return permanent file path
+  - Handle edge cases: permission errors, disk full
+- [ ] Implement `delete_file(file_path: str) -> bool`
+  - Add docstring for file deletion
+  - Validate file exists before deletion
+  - Delete file securely
+  - Log deletion
+  - Return success status
+  - Handle permission errors gracefully
+
+#### Task 7: Implement Metadata Management
+- [ ] Implement `create_document_metadata(document_id: str, user_id: str, file_info: Dict) -> Dict[str, Any]`
+  - Add docstring explaining metadata structure
+  - Create metadata dictionary with all required fields
+  - Include timestamps (created_at, updated_at)
+  - Include file information (name, type, size)
+  - Include processing status
+  - Return complete metadata object
+- [ ] Implement `update_document_metadata(document_id: str, updates: Dict[str, Any]) -> bool`
+  - Add docstring for metadata updates
+  - Validate document exists
+  - Update specified fields
+  - Update updated_at timestamp
+  - Log update operation
+  - Return success status
+
+#### Task 8: Implement Error Recovery
+- [ ] Implement `rollback_failed_ingestion(document_id: str, file_path: Optional[str] = None) -> None`
+  - Add docstring explaining cleanup after failure
+  - Delete any stored chunks from vector database
+  - Delete temporary files
+  - Update document status to FAILED
+  - Log rollback operation with reason
+  - Handle rollback failures gracefully (don't raise exceptions)
+
+#### Task 9: Write Unit Tests
+- [ ] Create `test_document_manager.py` with comprehensive tests
+- [ ] Write tests for document ingestion (successful, text extraction failure, embedding failure)
+- [ ] Write tests for document listing (with/without search, pagination)
+- [ ] Write tests for document details (valid document, not found, unauthorized)
+- [ ] Write tests for document deletion (successful, not found, unauthorized, partial failure)
+- [ ] Write tests for storage operations (move to permanent, file deletion)
+- [ ] Write tests for metadata operations (create, update)
+- [ ] Write tests for error recovery (rollback after various failures)
+- [ ] Use temporary directories and mock databases for isolated testing
+- [ ] Ensure all test functions have clear docstrings
+
+#### Task 10: Documentation and Code Quality
+- [ ] Ensure all functions have complete docstrings following PEP 257
+- [ ] Verify type hints are correct for all parameters and returns
+- [ ] Add inline comments explaining complex orchestration logic
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Document the complete document lifecycle with state diagrams
+- [ ] Create usage examples for common document management operations
+- [ ] Document error handling and recovery strategies
 
 ---
 
@@ -3985,6 +4555,162 @@ def check_memory_usage():
     return usage < 90  // Less than 90% used
 ```
 
+### Build Tasks for Flask API Routes
+
+**Objective:** Implement RESTful API endpoints for the RAG application with proper request handling, validation, and response formatting.
+
+#### Task 1: Set Up Flask Application Structure
+- [ ] Create `app.py` as main Flask application file with docstring
+- [ ] Add type hints: `from typing import Dict, Any, Optional, Tuple`
+- [ ] Import Flask, request, jsonify, and other required modules
+- [ ] Initialize Flask app with configuration
+- [ ] Set up CORS if needed for web client
+- [ ] Configure logging for API requests
+- [ ] Set up error handlers for common HTTP errors (404, 500, etc.)
+- [ ] Define API version prefix (e.g., /api/v1)
+
+#### Task 2: Implement Chat/Query Endpoint
+- [ ] Implement `@app.route('/api/v1/chat', methods=['POST'])`
+  - Add docstring explaining endpoint purpose and parameters
+  - Validate request content-type is application/json
+  - Extract and validate 'query' field from request body
+  - Get user_id from authentication context
+  - Extract optional conversation_id parameter
+  - Call process_rag_query from rag_pipeline
+  - Format response with answer and sources
+  - Handle streaming response if requested
+  - Return JSON response with 200 status
+  - Log request and response details
+  - Handle errors: missing query, validation failure, processing error
+  - Return appropriate error responses (400, 500)
+- [ ] Implement `handle_chat_request(request_data: Dict, user_id: str) -> Tuple[Dict, int]`
+  - Add comprehensive docstring
+  - Validate all required fields present
+  - Call RAG pipeline with proper error handling
+  - Format successful response
+  - Return response dict and status code
+
+#### Task 3: Implement Document Upload Endpoint
+- [ ] Implement `@app.route('/api/v1/documents', methods=['POST'])`
+  - Add docstring explaining file upload process
+  - Validate files are present in request
+  - Validate file types (PDF, Excel)
+  - Validate file sizes (max 100MB)
+  - Get user_id from authentication
+  - Save files to temporary storage
+  - Call ingest_document for each file
+  - Support batch upload (multiple files)
+  - Return upload results with document_ids
+  - Handle errors: no files, invalid type, size exceeded, ingestion failure
+  - Return appropriate status codes (201 created, 400 bad request)
+  - Log upload details (count, sizes, user)
+
+#### Task 4: Implement Document Management Endpoints
+- [ ] Implement `@app.route('/api/v1/documents', methods=['GET'])`
+  - Add docstring for listing documents
+  - Extract pagination parameters (page, per_page)
+  - Extract optional search_term parameter
+  - Get user_id from authentication
+  - Call list_documents function
+  - Return paginated document list with metadata
+  - Handle errors: invalid pagination params
+  - Return 200 with document list
+- [ ] Implement `@app.route('/api/v1/documents/<document_id>', methods=['GET'])`
+  - Add docstring for getting document details
+  - Extract document_id from URL
+  - Get user_id from authentication
+  - Call get_document_details function
+  - Return detailed document information
+  - Handle errors: document not found (404), unauthorized (403)
+- [ ] Implement `@app.route('/api/v1/documents/<document_id>', methods=['DELETE'])`
+  - Add docstring for document deletion
+  - Extract document_id from URL
+  - Get user_id from authentication
+  - Call delete_document function
+  - Return success response (204 no content)
+  - Handle errors: not found (404), unauthorized (403), deletion failure (500)
+
+#### Task 5: Implement Health Check Endpoint
+- [ ] Implement `@app.route('/api/v1/health', methods=['GET'])`
+  - Add docstring explaining health check purpose
+  - Check Ollama service availability
+  - Check vector database connectivity
+  - Check disk space availability
+  - Check memory usage
+  - Return health status object with component statuses
+  - Return 200 if all healthy, 503 if any component unhealthy
+  - Include timestamp and version information
+  - Log health check results
+
+#### Task 6: Implement Error Handlers
+- [ ] Implement `@app.errorhandler(400)` for bad requests
+  - Return JSON error response
+  - Include error message and timestamp
+- [ ] Implement `@app.errorhandler(404)` for not found
+  - Return JSON error response
+  - Include helpful message
+- [ ] Implement `@app.errorhandler(500)` for internal errors
+  - Return JSON error response
+  - Log full error details
+  - Return generic message to client (don't leak internals)
+- [ ] Implement custom error handler for ValidationError
+  - Extract validation error details
+  - Return 400 with specific validation messages
+- [ ] Implement custom error handler for AuthenticationError
+  - Return 401 unauthorized
+  - Log authentication failures
+
+#### Task 7: Implement Response Formatting Utilities
+- [ ] Implement `create_api_response(data: Any, status_code: int = 200) -> Tuple[Dict, int]`
+  - Add docstring for standardized response format
+  - Wrap data in consistent response structure
+  - Include success flag, data, timestamp
+  - Return tuple of (response_dict, status_code)
+- [ ] Implement `create_api_error(message: str, status_code: int = 500) -> Tuple[Dict, int]`
+  - Add docstring for error response format
+  - Create error response with message, code, timestamp
+  - Log error message
+  - Return tuple of (error_dict, status_code)
+
+#### Task 8: Implement Request Validation Middleware
+- [ ] Create `validators.py` module for request validation functions
+- [ ] Implement `validate_json_request() -> Optional[Dict]`
+  - Add docstring explaining JSON validation
+  - Check content-type header
+  - Parse JSON body
+  - Return None if invalid, parsed data if valid
+- [ ] Implement `require_fields(data: Dict, fields: List[str]) -> Optional[str]`
+  - Add docstring for required field validation
+  - Check all required fields present
+  - Return error message if missing, None if valid
+- [ ] Implement `validate_pagination_params(page: Any, per_page: Any) -> Tuple[int, int, Optional[str]]`
+  - Add docstring for pagination validation
+  - Parse and validate page number (>= 1)
+  - Parse and validate per_page (1-100)
+  - Return validated values or error message
+
+#### Task 9: Write Integration Tests
+- [ ] Create `test_api_routes.py` using Flask test client
+- [ ] Write tests for chat endpoint (valid query, missing query, empty query)
+- [ ] Write tests for document upload (valid file, invalid type, too large)
+- [ ] Write tests for document listing (no documents, with pagination, with search)
+- [ ] Write tests for document details (valid id, not found, unauthorized)
+- [ ] Write tests for document deletion (successful, not found, unauthorized)
+- [ ] Write tests for health endpoint (all healthy, some unhealthy)
+- [ ] Write tests for error handlers (404, 500, validation errors)
+- [ ] Mock backend services (RAG pipeline, document manager) for isolated testing
+- [ ] Ensure all test functions have clear docstrings
+
+#### Task 10: Documentation and Code Quality
+- [ ] Ensure all route functions have complete docstrings following PEP 257
+- [ ] Document request/response formats for each endpoint
+- [ ] Verify type hints for all parameters
+- [ ] Add inline comments for complex request handling logic
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Create OpenAPI/Swagger documentation for API
+- [ ] Document authentication requirements for each endpoint
+- [ ] Create example requests using curl or Python requests library
+
 ---
 
 ## Authentication and Authorization
@@ -4106,6 +4832,53 @@ def rate_limit(max_requests, time_window_seconds):
     return decorator
 ```
 
+### Build Tasks for Authentication and Authorization
+
+**Objective:** Implement secure authentication and authorization with JWT tokens and role-based access control.
+
+#### Task 1: Set Up Authentication Module
+- [ ] Create `auth.py` module with comprehensive docstring
+- [ ] Add type hints and imports (JWT, bcrypt, typing)
+- [ ] Set up secure configuration for secrets and tokens
+- [ ] Configure password hashing settings (bcrypt rounds)
+- [ ] Set up logging for authentication events
+
+#### Task 2: Implement User Authentication Functions
+- [ ] Implement `authenticate_user(username: str, password: str) -> Dict[str, Any]` with complete docstring
+- [ ] Implement `hash_password(password: str) -> str` with bcrypt
+- [ ] Implement `verify_password(password: str, hashed: str) -> bool`
+- [ ] Add comprehensive error handling and logging
+- [ ] Handle edge cases: empty credentials, invalid format
+
+#### Task 3: Implement JWT Token Management
+- [ ] Implement `generate_jwt_token(user_id: str, role: str, expiry_hours: int = 24) -> str`
+- [ ] Implement `verify_jwt_token(token: str) -> Dict[str, Any]`
+- [ ] Implement `refresh_token(old_token: str) -> str`
+- [ ] Handle token expiration, invalid tokens, malformed tokens
+- [ ] Add comprehensive docstrings with security considerations
+
+#### Task 4: Implement Authorization Decorators
+- [ ] Implement `@require_auth` decorator for protecting routes
+- [ ] Implement `@require_role(role)` decorator for role-based access
+- [ ] Implement `@rate_limit(max_requests, window)` decorator
+- [ ] Add proper error responses for unauthorized access
+- [ ] Include comprehensive docstrings for each decorator
+
+#### Task 5: Write Unit Tests
+- [ ] Create `test_auth.py` with comprehensive coverage
+- [ ] Test password hashing and verification
+- [ ] Test JWT generation, verification, expiration
+- [ ] Test decorators with mock requests
+- [ ] Test edge cases and security scenarios
+- [ ] Ensure all tests have clear docstrings
+
+#### Task 6: Documentation and Code Quality
+- [ ] Complete docstrings following PEP 257 for all functions
+- [ ] Verify type hints are correct
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Document security best practices
+- [ ] Add comments explaining cryptographic operations
+
 ---
 
 ## Caching and Performance
@@ -4204,6 +4977,54 @@ def generate_embedding_with_cache(text, client):
     
     return embedding
 ```
+
+### Build Tasks for Caching and Performance
+
+**Objective:** Implement caching mechanisms and performance optimizations to improve response times and reduce computational load.
+
+#### Task 1: Set Up Caching Module
+- [ ] Create `cache_manager.py` with comprehensive docstring
+- [ ] Add type hints and imports (LRU cache, time, typing)
+- [ ] Choose caching backend (in-memory dict, Redis, or both)
+- [ ] Set up logging for cache operations
+- [ ] Define cache configuration constants (TTL, max size)
+
+#### Task 2: Implement Query Result Cache
+- [ ] Implement `initialize_cache(max_size: int = 1000, ttl_seconds: int = 3600) -> Dict` with docstring
+- [ ] Implement `get_from_cache(cache: Dict, key: str) -> Optional[Any]`
+- [ ] Implement `add_to_cache(cache: Dict, key: str, value: Any) -> None`
+- [ ] Implement `generate_cache_key(query: str) -> str` using hash function
+- [ ] Implement LRU eviction when cache is full
+- [ ] Handle cache expiration based on TTL
+- [ ] Add comprehensive docstrings and type hints
+
+#### Task 3: Implement Embedding Cache
+- [ ] Implement `get_cached_embedding(text: str) -> Optional[List[float]]`
+- [ ] Implement `cache_embedding(text: str, embedding: List[float]) -> None`
+- [ ] Use text hash as cache key for space efficiency
+- [ ] Implement cache size limits to prevent memory issues
+- [ ] Add docstrings explaining caching strategy
+
+#### Task 4: Implement Cache Statistics and Monitoring
+- [ ] Implement `get_cache_stats(cache: Dict) -> Dict[str, Any]`
+- [ ] Track hit rate, miss rate, size, evictions
+- [ ] Log cache statistics periodically
+- [ ] Add docstrings for all monitoring functions
+
+#### Task 5: Write Unit Tests
+- [ ] Create `test_cache_manager.py` with comprehensive tests
+- [ ] Test cache operations (add, get, expiration, eviction)
+- [ ] Test cache key generation (uniqueness, collisions)
+- [ ] Test LRU eviction behavior
+- [ ] Test cache statistics accuracy
+- [ ] Ensure all tests have clear docstrings
+
+#### Task 6: Documentation and Code Quality
+- [ ] Complete docstrings following PEP 257
+- [ ] Verify type hints are correct
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Document caching strategies and trade-offs
+- [ ] Add performance benchmark documentation
 
 ---
 
@@ -4363,6 +5184,57 @@ def log_conversation(conversation_id, query, answer, sources):
     save_to_conversation_history(conversation_entry)
 ```
 
+### Build Tasks for Error Handling and Logging
+
+**Objective:** Implement comprehensive error handling with custom exceptions and structured logging throughout the application.
+
+#### Task 1: Set Up Error Handling Module
+- [ ] Create `errors.py` module defining all custom exceptions with docstrings
+- [ ] Define base exception class `RAGApplicationError(Exception)`
+- [ ] Define specific exceptions: `DocumentProcessingError`, `EmbeddingError`, `DatabaseError`, `AuthenticationError`, `ValidationError`
+- [ ] Add proper `__init__` methods with message and error_code parameters
+- [ ] Include type hints for all exception classes
+- [ ] Add comprehensive docstrings explaining when each exception is raised
+
+#### Task 2: Implement Logging Configuration
+- [ ] Create `logging_config.py` with comprehensive setup
+- [ ] Configure logging levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- [ ] Set up file logging with rotation (using RotatingFileHandler)
+- [ ] Set up console logging for development
+- [ ] Configure structured logging format (timestamp, level, module, message)
+- [ ] Implement separate loggers for different modules
+- [ ] Add docstrings explaining logging configuration
+
+#### Task 3: Implement Logging Utilities
+- [ ] Implement `log_info(message: str, **kwargs) -> None` with context
+- [ ] Implement `log_error(message: str, exception: Optional[Exception] = None, **kwargs) -> None`
+- [ ] Implement `log_warning(message: str, **kwargs) -> None`
+- [ ] Implement `log_debug(message: str, **kwargs) -> None`
+- [ ] Include contextual information (user_id, document_id, request_id)
+- [ ] Add stack traces for exceptions
+- [ ] Include comprehensive docstrings with usage examples
+
+#### Task 4: Implement Error Context Managers
+- [ ] Implement context manager for tracking operation timing and errors
+- [ ] Implement `@log_errors` decorator for automatic error logging
+- [ ] Implement `@retry_on_error` decorator with exponential backoff
+- [ ] Add proper docstrings explaining decorator usage
+
+#### Task 5: Write Unit Tests
+- [ ] Create `test_errors.py` testing all exception classes
+- [ ] Create `test_logging.py` testing logging functionality
+- [ ] Test exception raising and catching
+- [ ] Test logging output format and levels
+- [ ] Test decorator functionality
+- [ ] Ensure all tests have clear docstrings
+
+#### Task 6: Documentation and Code Quality
+- [ ] Complete docstrings following PEP 257 for all classes and functions
+- [ ] Verify type hints are correct
+- [ ] Run linter and fix PEP 8 violations
+- [ ] Document error handling patterns and best practices
+- [ ] Create error code reference documentation
+
 ---
 
 ## Utility Functions
@@ -4518,6 +5390,120 @@ def get_chunk_statistics(document_id):
         ])
     }
 ```
+
+### Build Tasks for Utility Functions
+
+**Objective:** Implement common utility functions for text processing, file operations, and database helpers following Python best practices.
+
+#### Task 1: Set Up Utilities Module
+- [ ] Create `utils.py` module with comprehensive module docstring
+- [ ] Add type hints: `from typing import List, Dict, Optional, Any`
+- [ ] Organize functions into logical sections (text, file, database, general)
+- [ ] Set up logging for utility operations
+- [ ] Add module-level constants for common values
+
+#### Task 2: Implement Text Processing Utilities
+- [ ] Implement `count_tokens(text: str) -> int` with proper tokenizer (tiktoken or similar)
+  - Add comprehensive docstring explaining tokenization method
+  - Handle empty strings and None values
+  - Include type hints
+- [ ] Implement `split_into_sentences(text: str) -> List[str]`
+  - Add docstring with sentence splitting rules
+  - Handle abbreviations and edge cases (Dr., Mr., etc.)
+  - Return list of clean sentences
+- [ ] Implement `get_last_tokens(text: str, n: int) -> str`
+  - Add docstring explaining token extraction
+  - Extract last n tokens for overlap calculation
+  - Handle cases where text has fewer than n tokens
+- [ ] Implement `clean_text(text: str) -> str`
+  - Add docstring explaining cleaning steps
+  - Remove extra whitespace, special characters
+  - Normalize line endings
+  - Return cleaned text
+
+#### Task 3: Implement UUID and ID Generation
+- [ ] Implement `generate_uuid() -> str` using uuid4
+  - Add docstring explaining UUID generation
+  - Return string representation of UUID
+- [ ] Implement `generate_document_id(filename: str, timestamp: float) -> str`
+  - Add docstring for deterministic ID generation
+  - Combine filename hash with timestamp
+  - Return unique document identifier
+
+#### Task 4: Implement File Operation Utilities
+- [ ] Implement `get_file_extension(filename: str) -> str`
+  - Add docstring with examples
+  - Handle filenames without extensions
+  - Return lowercase extension without dot
+- [ ] Implement `get_file_size(file_path: str) -> int`
+  - Add docstring explaining size in bytes
+  - Handle non-existent files
+  - Return file size
+- [ ] Implement `ensure_directory_exists(directory_path: str) -> None`
+  - Add docstring explaining directory creation
+  - Create directory and parent directories if needed
+  - Handle permission errors
+
+#### Task 5: Implement Database Helper Functions
+- [ ] Implement `save_document_metadata(metadata: Dict[str, Any]) -> bool`
+  - Add comprehensive docstring
+  - Validate metadata structure
+  - Insert into database
+  - Return success status
+  - Handle database errors
+- [ ] Implement `update_document_metadata(document_id: str, updates: Dict[str, Any]) -> bool`
+  - Add docstring for metadata updates
+  - Validate document exists
+  - Apply updates
+  - Return success status
+- [ ] Implement `fetch_document_metadata(document_id: str) -> Optional[Dict[str, Any]]`
+  - Add docstring explaining retrieval
+  - Query database for document
+  - Return metadata dict or None if not found
+  - Handle database errors gracefully
+
+#### Task 6: Implement Time and Date Utilities
+- [ ] Implement `get_current_timestamp() -> float`
+  - Add docstring explaining Unix timestamp
+  - Return current time as float
+- [ ] Implement `format_timestamp(timestamp: float, format_str: str = "%Y-%m-%d %H:%M:%S") -> str`
+  - Add docstring with format examples
+  - Convert timestamp to formatted string
+  - Handle invalid timestamps
+- [ ] Implement `get_current_time() -> float` (alias for timestamp)
+  - Add docstring
+  - Return current time for timing operations
+
+#### Task 7: Implement Configuration Helpers
+- [ ] Implement `get_config(key: str, default: Any = None) -> Any`
+  - Add docstring explaining configuration retrieval
+  - Get value from environment or config file
+  - Return default if key not found
+  - Handle type conversion (int, bool, float)
+- [ ] Implement `validate_config() -> bool`
+  - Add docstring listing required config keys
+  - Check all required configuration is present
+  - Log missing configuration
+  - Return validation status
+
+#### Task 8: Write Unit Tests
+- [ ] Create `test_utils.py` with comprehensive coverage
+- [ ] Test text processing (tokenization, sentence splitting, cleaning)
+- [ ] Test UUID and ID generation (uniqueness, format)
+- [ ] Test file operations (extension, size, directory creation)
+- [ ] Test database helpers (save, update, fetch with mocks)
+- [ ] Test time utilities (timestamp format, conversion)
+- [ ] Test configuration helpers (get, validation)
+- [ ] Ensure all test functions have descriptive docstrings
+
+#### Task 9: Documentation and Code Quality
+- [ ] Ensure all functions have complete docstrings following PEP 257
+- [ ] Verify type hints for all parameters and return values
+- [ ] Add inline comments for complex utility logic
+- [ ] Run linter and fix PEP 8 violations (line length, naming)
+- [ ] Group related functions with section comments
+- [ ] Create usage examples for commonly used utilities
+- [ ] Document any third-party library dependencies
 
 ---
 

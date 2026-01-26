@@ -1075,7 +1075,7 @@ CACHE_TTL_SECONDS=3600
 WORKER_PROCESSES=4
 
 # Database
-DATABASE_URL=postgresql://username:password@hostname:port/database  # Use secrets manager for credentials
+DATABASE_URL=postgresql://{{username}}:{{password}}@{{hostname}}:{{port}}/{{database}}  # Use secrets manager for credentials
 # Or: sqlite:///data/rag.db for simple deployments
 # Production: Use AWS Secrets Manager, Azure Key Vault, or GCP Secret Manager
 
@@ -1087,7 +1087,7 @@ VECTOR_DB_PATH=/app/data/vector_db
 # Monitoring
 ENABLE_METRICS=True
 METRICS_PORT=9090
-SENTRY_DSN=https://your-sentry-dsn@sentry.io/project-id  # Optional
+SENTRY_DSN=https://{{sentry-key}}@sentry.io/{{project-id}}  # Optional
 ```
 
 ---

@@ -105,7 +105,7 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 - **Importance**: Ensures system remains functional as document collection grows
 
 #### **NFR3: Privacy and Security**
-- **NFR3.1**: All processing occurs on the server (supporting both local and remote Ollama instances)
+- **NFR3.1**: All processing occurs on the application server (supporting both self-hosted and remote Ollama instances)
 - **NFR3.2**: Document data remains secure on the application server
 - **NFR3.3**: Secure file upload validation (file type, size limits)
 - **NFR3.4**: Access control for document upload/deletion operations

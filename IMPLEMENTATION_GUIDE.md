@@ -10,18 +10,19 @@ This guide provides a comprehensive, step-by-step roadmap for implementing the P
 
 ## Table of Contents
 
-1. [Prerequisites & Setup](#1-prerequisites--setup)
-2. [Phase 1: Project Foundation](#2-phase-1-project-foundation-week-1)
-3. [Phase 2: Document Processing](#3-phase-2-document-processing-week-1-2)
-4. [Phase 3: Vector Database & Embeddings](#4-phase-3-vector-database--embeddings-week-2)
-5. [Phase 4: RAG Pipeline](#5-phase-4-rag-pipeline-week-3)
-6. [Phase 5: API Layer](#6-phase-5-api-layer-week-3-4)
-7. [Phase 6: Frontend](#7-phase-6-frontend-week-4)
-8. [Phase 7: Authentication & Security](#8-phase-7-authentication--security-week-5)
-9. [Phase 8: Testing & Quality Assurance](#9-phase-8-testing--quality-assurance-week-5-6)
-10. [Phase 9: Deployment & Production](#10-phase-9-deployment--production-week-6)
-11. [Verification & Troubleshooting](#11-verification--troubleshooting)
-12. [Next Steps & Enhancements](#12-next-steps--enhancements)
+1. [System Architecture Overview](#system-architecture-overview)
+2. [Prerequisites & Setup](#1-prerequisites--setup)
+3. [Phase 1: Project Foundation](#2-phase-1-project-foundation-week-1)
+4. [Phase 2: Document Processing](#3-phase-2-document-processing-week-1-2)
+5. [Phase 3: Vector Database & Embeddings](#4-phase-3-vector-database--embeddings-week-2)
+6. [Phase 4: RAG Pipeline](#5-phase-4-rag-pipeline-week-3)
+7. [Caching Implementation](#6-caching-implementation-critical-for-performance)
+8. [Citation Management System](#7-citation-management-system)
+9. [Semantic Chunking Enhancement](#8-semantic-chunking-enhancement)
+10. [Phase 8: Testing & Quality Assurance](#9-phase-8-testing--quality-assurance-week-5-6)
+11. [Phase 9: Deployment & Production](#10-phase-9-deployment--production-week-6)
+12. [Verification & Troubleshooting](#11-verification--troubleshooting)
+13. [Next Steps & Enhancements](#12-next-steps--enhancements)
 
 ---
 

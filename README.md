@@ -1042,27 +1042,59 @@ For detailed optimization techniques, see [Performance Guide](SPARC_Documents/Re
 
 ### Security Features
 
-- ✅ JWT-based authentication with expiration
-- ✅ Role-based access control (RBAC)
-- ✅ Rate limiting per user (100 req/hour)
-- ✅ Input validation and sanitization
-- ✅ SQL injection prevention
-- ✅ XSS protection headers
-- ✅ HTTPS with TLS 1.3
-- ✅ Comprehensive audit logging
-- ✅ Local data storage (no external transmission)
+- ✅ JWT-based authentication with expiration (1-hour default, configurable)
+- ✅ Role-based access control (RBAC) - user/admin roles
+- ✅ Rate limiting per user (100 req/hour, configurable)
+- ✅ Input validation and sanitization (3-1000 char range, malicious pattern detection)
+- ✅ SQL injection prevention (parameterized queries)
+- ✅ XSS protection headers (Content-Security-Policy, X-Frame-Options)
+- ✅ HTTPS with TLS 1.3 (production)
+- ✅ Comprehensive audit logging (non-blocking async writes)
+- ✅ Local data storage (no external transmission, privacy-first)
+- ✅ Secure file upload validation (type, size, content checking)
+
+### Error Handling & Fallback Mechanisms
+
+The application implements comprehensive error handling with intelligent fallbacks:
+
+**Query Processing Fallbacks:**
+```
+1. Cache check fails → Continue to embedding generation
+2. Embedding generation fails → Retry 3x with exponential backoff (1s, 2s, 4s)
+3. Vector search fails → Return empty results + fallback message
+4. LLM generation fails → Return "Unable to generate answer" message
+5. Citation matching fails → Return answer without citation markers
+```
+
+**Retry Logic:**
+- Ollama API calls: 3 retries with exponential backoff
+- ChromaDB operations: 2 retries with 1s delay
+- All retries logged for debugging and monitoring
+
+**Error Context:**
+- Rich error messages with context (query, timestamp, stack trace)
+- Non-blocking error logging (doesn't interrupt user flow)
+- Health check endpoint monitors all critical services
+
+**Graceful Degradation:**
+- If Ollama unavailable: Return cached results or "Service unavailable" message
+- If ChromaDB unavailable: Prevent new uploads, allow cached queries
+- If disk full: Prevent uploads, continue serving queries from existing index
 
 ### Security Best Practices
 
 ```bash
-# Production checklist
-- [ ] Debug mode disabled
-- [ ] Strong secret key (32+ chars)
-- [ ] HTTPS enabled
-- [ ] Firewall configured
-- [ ] Rate limiting enabled
-- [ ] Regular security updates
-- [ ] Audit logs monitored
+# Production security checklist
+- [ ] Debug mode disabled (DEBUG=False in .env)
+- [ ] Strong secret key (32+ chars, randomly generated)
+- [ ] HTTPS enabled with valid SSL certificate
+- [ ] Firewall configured (only ports 80, 443 open)
+- [ ] Rate limiting enabled (MAX_REQUESTS_PER_HOUR set appropriately)
+- [ ] Regular security updates (OS, Python packages)
+- [ ] Audit logs monitored daily
+- [ ] File upload directory permissions restricted (chmod 700)
+- [ ] Database backups enabled (daily ChromaDB snapshots)
+- [ ] Intrusion detection configured (fail2ban recommended)
 ```
 
 For detailed security guidelines, see [Security Guide](SPARC_Documents/Completion.md#security-best-practices).

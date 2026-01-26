@@ -638,7 +638,7 @@ class Environment(str, Enum):
     PRODUCTION = "production"
 
 class OllamaConfig(BaseSettings):
-    base_url: str = Field(default=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"), env="OLLAMA_BASE_URL")
+    base_url: str = Field(default="http://localhost:11434", env="OLLAMA_BASE_URL")
     embedding_model: str = Field(default="nomic-embed-text", env="OLLAMA_EMBEDDING_MODEL")
     llm_model: str = Field(default="llama2", env="OLLAMA_LLM_MODEL")
     timeout: int = Field(default=30, ge=5, le=120)

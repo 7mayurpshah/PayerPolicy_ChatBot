@@ -1075,7 +1075,7 @@ CACHE_TTL_SECONDS=3600
 WORKER_PROCESSES=4
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost/ragdb  # For production
+DATABASE_URL=postgresql://user:pass@db.example.com/ragdb  # For production
 # Or: sqlite:///data/rag.db for simple deployments
 
 # Storage
@@ -1154,7 +1154,7 @@ limiter = Limiter(
     app,
     key_func=get_remote_address,
     default_limits=["100 per hour", "10 per minute"],
-    storage_uri="redis://localhost:6379"  # Or memory:// for simple setups
+    storage_uri=os.getenv("REDIS_URL", "redis://localhost:6379")  # Or memory:// for simple setups
 )
 
 @app.route('/api/chat', methods=['POST'])

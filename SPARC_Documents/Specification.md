@@ -44,11 +44,10 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 
 #### **FR1: Document Ingestion and Processing**
 - **FR1.1**: Support PDF document upload and processing
-- **FR1.2**: Support Excel file (.xlsx, .xls) upload and processing
-- **FR1.3**: Extract text content from documents while preserving structure
-- **FR1.4**: Handle batch uploads of multiple documents
-- **FR1.5**: Process and store document metadata (filename, upload date, size, type)
-- **FR1.6**: Generate unique document identifiers for tracking
+- **FR1.2**: Extract text content from documents while preserving structure
+- **FR1.3**: Handle batch uploads of multiple documents
+- **FR1.4**: Process and store document metadata (filename, upload date, size, type)
+- **FR1.5**: Generate unique document identifiers for tracking
 
 #### **FR2: Vector Embedding and Storage**
 - **FR2.1**: Generate embeddings using nomic-embed-text model via Ollama
@@ -77,8 +76,9 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 - **FR5.3**: Highlight relevant passages in source documents
 - **FR5.4**: Show document metadata (filename, page numbers, relevance scores)
 - **FR5.5**: Allow users to click through to view full source documents
-- **FR5.6**: Provide document upload interface
+- **FR5.6**: Provide document upload interface (only to developers)
 - **FR5.7**: Display indexing progress and status
+- **FR5.8**: Show chat history
 
 #### **FR6: Document Management**
 - **FR6.1**: List all indexed documents
@@ -142,7 +142,7 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 
 **Goal**: Index a collection of research reports for future querying
 
-**Flow**:
+**Flow**: (Comment: The use case does not align with what we are trying to achieve)
 1. Sarah navigates to the web application
 2. Clicks "Upload Documents" button
 3. Selects 50 PDF research reports from her local drive
@@ -216,18 +216,18 @@ RAG is a technique that enhances large language model accuracy by retrieving rel
 ```
 ┌─────────────────────────────────────────────────────────┐
 │  Header: Logo | Document Management | Settings          │
-├──────────────────────────┬──────────────────────────────┤
-│                          │                              │
-│  Chat Interface          │  Source Documents Panel      │
-│  ┌────────────────────┐  │  ┌────────────────────────┐ │
-│  │ User: Question     │  │  │ Document 1 (Score: 0.9)│ │
-│  │ Bot: Answer [1][2] │  │  │ "...relevant passage..." │ │
-│  │                    │  │  │                          │ │
-│  │                    │  │  │ Document 2 (Score: 0.85)│ │
-│  └────────────────────┘  │  │ "...relevant passage..." │ │
-│  [Type your question...] │  └────────────────────────┘ │
-│                          │                              │
-└──────────────────────────┴──────────────────────────────┘
+├────────────────────────────────|────────────────────────┤
+│                                │                        │
+│      Chat Interface            │ Source Documents Panel │
+│     ┌────────────────────┐     │┌──────────────────────┐│
+│     │ User: Question     │     ││Document 1 Score: 0.9 ││
+│     │ Bot: Answer [1][2] │     ││ "<relevant passage>" ││
+│     │                    │     ││                      ││
+│     │                    │     ││Document 2 Score: 0.85││
+│     └────────────────────┘     ││ "<relevant passage>" ││
+│     [Type your question...]    │└──────────────────────┘│
+│     [History]                  │                        │
+└────────────────────────────────|────────────────────────┘
 ```
 
 #### **Accessibility Standards**
